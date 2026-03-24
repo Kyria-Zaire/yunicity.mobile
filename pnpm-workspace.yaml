@@ -39,7 +39,7 @@ catalog:
   qrcode: ^1.5.4
   react: ^19.1.0
   react-dom: ^19.1.0
-  react-hook-form: ^7.56.1
+  react-hook-form: ^7.72.0
   resend: ^4.5.1
   socket.io: ^4.8.1
   stripe: ^17.7.0
