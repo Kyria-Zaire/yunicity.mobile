@@ -8,8 +8,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  issues: write
   contents: read
+  issues: write
+  security-events: write
 
 jobs:
   audit:
@@ -20,7 +21,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 10.16.1
 
       - uses: actions/setup-node@v4
         with:
