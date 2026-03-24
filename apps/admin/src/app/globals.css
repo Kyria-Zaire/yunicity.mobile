@@ -1,0 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #2a2fff;
+  --dark: #0d0f2e;
+  --dark-mid: #1c1f4a;
+  --admin-bg: #111827;
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    font-family: 'DM Sans', sans-serif;
+  }
+  body {
+    @apply bg-[#111827] text-white antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Syne', sans-serif;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-[#2A2FFF] ring-offset-2 ring-offset-[#111827];
+  }
+  ::selection {
+    background-color: #2a2fff;
+    color: #fff;
+  }
+}

@@ -1,0 +1,240 @@
+name: yunicity
+
+networks:
+  internal:
+    driver: bridge
+  external:
+    driver: bridge
+
+volumes:
+  mongo_data:
+  redis_data:
+  postgres_data:
+
+services:
+
+  # ── Seul service exposé sur le host ──
+  api-gateway:
+    build:
+      context: .
+      dockerfile: docker/node-service.Dockerfile
+      target: builder
+      args:
+        SERVICE_DIR: api-gateway
+        EXPOSE_PORT: "3000"
+    ports:
+      - "3000:3000"
+    env_file: ./services/api-gateway/.env.local
+    volumes:
+      - ./services/api-gateway/src:/app/services/api-gateway/src:delegated
+    networks:
+      - external
+      - internal
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    restart: unless-stopped
+
+  # ── Microservices (réseau interne uniquement) ──
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+      target: builder
+    env_file: ./services/auth-service/.env.local
+    volumes:
+      - ./services/auth-service/src:/app/services/auth-service/src:delegated
+    networks:
+      - internal
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  user-service:
+    build:
+      context: .
+      dockerfile: docker/node-service.Dockerfile
+      target: builder
+      args:
+        SERVICE_DIR: user-service
+        EXPOSE_PORT: "3002"
+    env_file: ./services/user-service/.env.local
+    volumes:
+      - ./services/user-service/src:/app/services/user-service/src:delegated
+    networks:
+      - internal
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  community-service:
+    build: { context: ./services/community-service, target: builder }
+    env_file: ./services/community-service/.env.local
+    volumes: ["./services/community-service/src:/app/src:delegated"]
+    networks: [internal]
+    depends_on: { redis: { condition: service_healthy }, mongodb: { condition: service_healthy } }
+    restart: unless-stopped
+
+  map-service:
+    build:
+      context: .
+      dockerfile: docker/node-service.Dockerfile
+      target: builder
+      args: { SERVICE_DIR: map-service, EXPOSE_PORT: "3004" }
+    env_file: ./services/map-service/.env.local
+    volumes: ["./services/map-service/src:/app/services/map-service/src:delegated"]
+    networks: [internal]
+    depends_on: { redis: { condition: service_healthy }, mongodb: { condition: service_healthy } }
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: docker/node-service.Dockerfile
+      target: builder
+      args: { SERVICE_DIR: payment-service, EXPOSE_PORT: "3005" }
+    env_file: ./services/payment-service/.env.local
+    volumes: ["./services/payment-service/src:/app/services/payment-service/src:delegated"]
+    networks: [internal]
+    depends_on: { redis: { condition: service_healthy }, mongodb: { condition: service_healthy } }
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: docker/node-service.Dockerfile
+      target: builder
+      args: { SERVICE_DIR: notification-service, EXPOSE_PORT: "3006" }
+    env_file: ./services/notification-service/.env.local
+    volumes: ["./services/notification-service/src:/app/services/notification-service/src:delegated"]
+    networks: [internal]
+    depends_on: { redis: { condition: service_healthy } }
+    restart: unless-stopped
+
+  moderation-service:
+    build:
+      context: .
+      dockerfile: docker/node-service.Dockerfile
+      target: builder
+      args: { SERVICE_DIR: moderation-service, EXPOSE_PORT: "3007" }
+    env_file: ./services/moderation-service/.env.local
+    volumes: ["./services/moderation-service/src:/app/services/moderation-service/src:delegated"]
+    networks: [internal]
+    depends_on: { redis: { condition: service_healthy }, mongodb: { condition: service_healthy } }
+    restart: unless-stopped
+
+  crm-service:
+    build:
+      context: .
+      dockerfile: docker/node-service.Dockerfile
+      target: builder
+      args: { SERVICE_DIR: crm-service, EXPOSE_PORT: "3008" }
+    env_file: ./services/crm-service/.env.local
+    volumes: ["./services/crm-service/src:/app/services/crm-service/src:delegated"]
+    networks: [internal]
+    depends_on: { redis: { condition: service_healthy }, mongodb: { condition: service_healthy } }
+    restart: unless-stopped
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: docker/node-service.Dockerfile
+      target: builder
+      args: { SERVICE_DIR: ai-service, EXPOSE_PORT: "3009" }
+    env_file: ./services/ai-service/.env.local
+    volumes: ["./services/ai-service/src:/app/services/ai-service/src:delegated"]
+    networks: [internal]
+    depends_on: { redis: { condition: service_healthy } }
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/node-service.Dockerfile
+      target: builder
+      args: { SERVICE_DIR: worker, EXPOSE_PORT: "3010" }
+    env_file: ./services/worker/.env.local
+    volumes: ["./services/worker/src:/app/services/worker/src:delegated"]
+    networks: [internal]
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Infrastructure ──
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: yunicity
+      POSTGRES_USER: yunicity
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_local}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yunicity -d yunicity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27018:27017"   # 27018 sur host → 27017 dans le container
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-yunicity}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-changeme_local}
+      MONGO_INITDB_DATABASE: yunicity
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')", "--quiet"]
+      interval: 15s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme_local} --appendonly yes --loglevel warning
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD:-changeme_local}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  clamav:
+    image: clamav/clamav:stable
+    networks:
+      - internal
+    volumes:
+      - /tmp/clamav:/tmp/scan
+    restart: unless-stopped

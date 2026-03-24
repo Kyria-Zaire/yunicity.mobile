@@ -1,0 +1,36 @@
+{
+  "name": "@yunicity/ai-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "fastify": "catalog:",
+    "@fastify/helmet": "catalog:",
+    "@fastify/cors": "catalog:",
+    "@fastify/rate-limit": "catalog:",
+    "pino": "catalog:",
+    "ioredis": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:",
+    "@yunicity/types": "workspace:*",
+    "@yunicity/validators": "workspace:*",
+    "@yunicity/config": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "vitest": "catalog:",
+    "supertest": "catalog:",
+    "@types/supertest": "catalog:"
+  }
+}

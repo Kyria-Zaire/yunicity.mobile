@@ -1,0 +1,25 @@
+{
+  "name": "@yunicity/admin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3020",
+    "build": "next build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "@yunicity/ui": "workspace:*",
+    "@yunicity/types": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "tailwindcss": "catalog:",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3"
+  }
+}

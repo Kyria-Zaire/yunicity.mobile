@@ -1,0 +1,41 @@
+{
+  "name": "yunicity",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Yunicity — Réseau social local phygital",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\" --ignore-path .gitignore"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@10.16.1",
+  "pnpm": {
+    "overrides": {
+      "kysely": ">=0.28.14",
+      "fast-xml-parser": ">=5.5.6"
+    },
+    "onlyBuiltDependencies": [
+      "argon2",
+      "esbuild",
+      "msgpackr-extract",
+      "sharp"
+    ]
+  },
+  "devDependencies": {
+    "prettier": "catalog:",
+    "turbo": "^2.8.17",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "mapbox-gl": "^3.20.0",
+    "maplibre-gl": "^5.20.2"
+  }
+}

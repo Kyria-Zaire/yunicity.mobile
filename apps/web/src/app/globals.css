@@ -1,0 +1,220 @@
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #2a2fff;
+  --primary-dark: #1a1ecc;
+  --primary-light: #e8e9ff;
+  --primary-mid: #9395ff;
+  --dark: #0d0f2e;
+  --dark-mid: #1c1f4a;
+  --gray: #6b7280;
+  --gray-light: #f3f4f6;
+  --white: #ffffff;
+  --success: #16a34a;
+  --warning: #d97706;
+  --error: #dc2626;
+  --shadow-primary: 0 8px 32px rgba(42, 47, 255, 0.25), 0 2px 8px rgba(42, 47, 255, 0.15);
+  --shadow-card: 0 2px 12px rgba(13, 15, 46, 0.07);
+  --shadow-hover: 0 8px 32px rgba(13, 15, 46, 0.12);
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes pulse-ring {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(42, 47, 255, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(42, 47, 255, 0);
+  }
+}
+
+@keyframes underline-reveal {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-8px);
+  }
+  40%,
+  80% {
+    transform: translateX(8px);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes window-flicker {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes markerPulse {
+  0%,
+  100% {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 0 0 currentColor;
+  }
+  50% {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 0 8px transparent;
+  }
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    font-family: 'DM Sans', sans-serif;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-white text-[#0D0F2E] antialiased;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Syne', sans-serif;
+  }
+  ::selection {
+    background-color: #2a2fff;
+    color: #ffffff;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-[#2A2FFF] ring-offset-2;
+  }
+}
+
+/* Scrollbar WebKit */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2fff;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #1a1ecc;
+}
+
+.skip-link {
+  @apply sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:bg-[#2A2FFF] focus:text-white focus:px-4 focus:py-2 focus:rounded-xl focus:no-underline focus:font-medium;
+}
+
+.hero-underline {
+  position: relative;
+  display: inline-block;
+}
+.hero-underline::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0.06em;
+  width: 100%;
+  height: 3px;
+  background: #2a2fff;
+  transform-origin: left;
+  animation: underline-reveal 0.9s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards;
+  transform: scaleX(0);
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.animate-float-1 {
+  animation: float 5s ease-in-out infinite;
+}
+.animate-float-2 {
+  animation: float 5.5s ease-in-out 0.5s infinite;
+}
+.animate-float-3 {
+  animation: float 6s ease-in-out 1s infinite;
+}

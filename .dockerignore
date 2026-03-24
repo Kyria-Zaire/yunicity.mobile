@@ -1,0 +1,10 @@
+# Contexte racine pour api-gateway / auth-service
+**/node_modules
+.git
+.turbo
+**/.next
+coverage
+.claude
+.cursor
+*.md
+!README.md

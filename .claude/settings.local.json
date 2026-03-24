@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm --filter @yunicity/payment-service typecheck)",
+      "Bash(pnpm --filter @yunicity/payment-service test)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm --filter @yunicity/ai-service typecheck)",
+      "Bash(pnpm --filter @yunicity/ai-service test)",
+      "Bash(pnpm --filter @yunicity/web typecheck)",
+      "Bash(pnpm --filter @yunicity/auth-service typecheck)",
+      "Bash(pnpm --filter @yunicity/api-gateway typecheck)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm -r --parallel typecheck)",
+      "Bash(find c:/Users/kyria/yunicity.mobile/services/user-service/src -name *.ts -not -path */node_modules/*)",
+      "Bash(ls c:/Users/kyria/yunicity.mobile/services/notification-service/vitest*)",
+      "Bash(find c:/Users/kyria/yunicity.mobile/apps/mobile/src -name *.ts -o -name *.tsx)",
+      "Bash(pnpm -r --parallel test)",
+      "Bash(pnpm --filter @yunicity/mobile typecheck)",
+      "Bash(pnpm --filter @yunicity/user-service typecheck)",
+      "Bash(pnpm --filter @yunicity/scripts typecheck)",
+      "Bash(npx prisma:*)",
+      "Bash(pnpm --filter @yunicity/database typecheck)",
+      "Bash(grep -l \"mongoose\" /c/Users/kyria/yunicity.mobile/services/*/package.json)",
+      "Bash(pnpm turbo:*)",
+      "Bash(pnpm -r --filter './services/*' run test)",
+      "Bash(pnpm -r run test)",
+      "Bash(pnpm --filter @yunicity/admin build)",
+      "Bash(grep '\"\"react\"\"' pnpm-workspace.yaml)",
+      "Bash(find c:/Users/kyria/yunicity.mobile/apps/admin -name _error* -o -name _document* -o -name _app*)",
+      "Bash(node -e \":*)",
+      "Bash(rm -rf apps/web/.next)",
+      "Bash(pnpm --filter @yunicity/web build)",
+      "Bash(git -C \"c:/Users/kyria/yunicity.mobile\" rev-parse --show-toplevel)",
+      "Bash(chmod +x \"c:/Users/kyria/yunicity.mobile/packages/database/migrate-prod.sh\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\kyria\\yunicity.mobile\\apps\\mobile\\src"
+    ]
+  }
+}

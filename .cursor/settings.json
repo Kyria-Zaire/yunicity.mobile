@@ -1,0 +1,76 @@
+{
+    "cursor.general.enableShadowWorkspace": true,
+  
+    "cursor.chat.defaultModel": "claude-sonnet-4-5",
+  
+    "cursor.composer.defaultModel": "claude-sonnet-4-5",
+  
+    "cursor.rules.alwaysApplyRules": [
+      ".cursor/rules/000-yunicity-global.mdc",
+      ".cursor/rules/008-git-conventions.mdc"
+    ],
+  
+    "cursor.rules.autoApplyRules": true,
+  
+    "cursor.generation.ignoredFiles": [
+      "**/.env*",
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/*.lock",
+      "**/coverage/**"
+    ],
+  
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit",
+      "source.organizeImports": "explicit"
+    },
+    "editor.rulers": [100],
+    "editor.tabSize": 2,
+  
+    "typescript.preferences.importModuleSpecifier": "non-relative",
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "typescript.inlayHints.parameterNames.enabled": "all",
+    "typescript.inlayHints.functionLikeReturnTypes.enabled": true,
+    "typescript.preferences.preferTypeOnlyAutoImports": true,
+  
+    "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+  
+    "files.exclude": {
+      "**/.git": true,
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.next": true,
+      "**/.expo": true
+    },
+  
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.next": true,
+      "**/coverage": true,
+      "**/*.lock": true
+    },
+  
+    "extensions.recommendations": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "ms-vscode.vscode-typescript-next",
+      "bradlc.vscode-tailwindcss",
+      "mongodb.mongodb-vscode",
+      "ms-azuretools.vscode-docker",
+      "vitest.explorer",
+      "usernamehw.errorlens",
+      "streetsidesoftware.code-spell-checker-french"
+    ]
+  }
+  

@@ -1,0 +1,43 @@
+name: Security Scan — Hebdomadaire
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'  # Lundi 8h UTC
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: Audit complet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit moderate+
+        run: pnpm audit --audit-level=moderate
+
+      - name: Create issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🔴 Vulnérabilité détectée — ' + new Date().toISOString().split('T')[0],
+              body: 'Le scan de sécurité hebdomadaire a détecté des vulnérabilités.\n\nVoir le workflow : ' + context.serverUrl + '/' + context.repo.owner + '/' + context.repo.repo + '/actions/runs/' + context.runId,
+              labels: ['security', 'urgent']
+            });

@@ -1,0 +1,43 @@
+{
+  "name": "@yunicity/notification-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "fastify": "catalog:",
+    "@fastify/helmet": "catalog:",
+    "@fastify/cors": "catalog:",
+    "@fastify/rate-limit": "catalog:",
+    "resend": "catalog:",
+    "twilio": "catalog:",
+    "bullmq": "catalog:",
+    "zod": "catalog:",
+    "pino": "catalog:",
+    "ioredis": "catalog:",
+    "socket.io": "catalog:",
+    "@socket.io/redis-adapter": "catalog:",
+    "web-push": "^3.6.7",
+    "@yunicity/database": "workspace:*",
+    "dotenv": "catalog:",
+    "@yunicity/types": "workspace:*",
+    "@yunicity/config": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "vitest": "catalog:",
+    "supertest": "catalog:",
+    "@types/supertest": "catalog:",
+    "@types/web-push": "^3.6.4"
+  }
+}

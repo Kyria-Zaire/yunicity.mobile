@@ -1,0 +1,42 @@
+{
+  "name": "@yunicity/auth-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "fastify": "catalog:",
+    "@fastify/helmet": "catalog:",
+    "@fastify/cors": "catalog:",
+    "@fastify/rate-limit": "catalog:",
+    "better-auth": "catalog:",
+    "@better-auth/prisma-adapter": "catalog:",
+    "argon2": "catalog:",
+    "@yunicity/database": "workspace:*",
+    "otplib": "catalog:",
+    "qrcode": "catalog:",
+    "pino": "catalog:",
+    "ioredis": "catalog:",
+    "dotenv": "catalog:",
+    "@yunicity/types": "workspace:*",
+    "@yunicity/validators": "workspace:*",
+    "@yunicity/config": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "@types/qrcode": "catalog:",
+    "tsx": "catalog:",
+    "vitest": "catalog:",
+    "supertest": "catalog:",
+    "@types/supertest": "catalog:"
+  }
+}

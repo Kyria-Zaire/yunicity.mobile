@@ -1,0 +1,20 @@
+{
+  "name": "@yunicity/scripts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "seed": "tsx seed/seed.ts",
+    "seed:reset": "tsx seed/seed.ts --reset",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@yunicity/database": "workspace:*",
+    "argon2": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "@types/node": "catalog:",
+    "tsx": "catalog:"
+  }
+}
