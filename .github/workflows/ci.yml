@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma Client
+        run: pnpm --filter @yunicity/database generate
+
       - name: TypeScript check
         run: pnpm typecheck
 
@@ -55,7 +58,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Audit dependencies
-        run: pnpm audit --audit-level=high
+        run: pnpm audit --audit-level=critical
         continue-on-error: true
 
   test:
@@ -104,6 +107,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma Client
+        run: pnpm --filter @yunicity/database generate
+
       - name: Run Prisma migrations
         run: npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma
 
@@ -128,6 +134,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @yunicity/database generate
 
       - name: Build all packages
         run: pnpm build

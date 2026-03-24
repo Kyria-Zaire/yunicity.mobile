@@ -20,7 +20,8 @@
   "pnpm": {
     "overrides": {
       "kysely": ">=0.28.14",
-      "fast-xml-parser": ">=5.5.6"
+      "fast-xml-parser": ">=5.5.6",
+      "effect": ">=3.20.0"
     },
     "onlyBuiltDependencies": [
       "argon2",

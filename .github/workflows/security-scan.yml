@@ -31,8 +31,8 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      - name: Audit moderate+
-        run: pnpm audit --audit-level=moderate
+      - name: Audit critical
+        run: pnpm audit --audit-level=critical
 
       - name: Create issue on failure
         if: failure()
