@@ -1,5 +1,4 @@
-const API_URL = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3000';
-const ADMIN_KEY = process.env['NEXT_PUBLIC_ADMIN_KEY'] ?? 'dev_admin_key_yunicity_2026';
+import { API_URL, ADMIN_KEY } from '@/lib/config';
 
 const headers = {
   'Content-Type': 'application/json',
@@ -81,4 +80,3 @@ export async function rejectUser(userId: string, reason: string): Promise<boolea
     return false;
   }
 }
-

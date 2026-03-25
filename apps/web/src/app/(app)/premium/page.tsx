@@ -3,9 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from '@/lib/auth-client';
-
-const API_BASE =
-  process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3000';
+import { API_URL } from '@/lib/config';
 
 function safeUserAndEmail(session: unknown): {
   userId: string | null;
@@ -13,11 +11,7 @@ function safeUserAndEmail(session: unknown): {
 } {
   const s = session as Record<string, Record<string, string>>;
   return {
-    userId:
-      s?.['user']?.['id'] ??
-      s?.['user']?.['userId'] ??
-      s?.['user']?.['_id'] ??
-      null,
+    userId: s?.['user']?.['id'] ?? s?.['user']?.['userId'] ?? s?.['user']?.['_id'] ?? null,
     email: s?.['user']?.['email'] ?? null,
   };
 }
@@ -52,7 +46,7 @@ const FAQ = [
     a: "Profitez de 7 jours complets sans engagement. Aucune carte bancaire requise pour commencer. Vous serez prevenus avant la fin de l'essai.",
   },
   {
-    q: "Puis-je me desabonner a tout moment ?",
+    q: 'Puis-je me desabonner a tout moment ?',
     a: "Oui. Vous pouvez annuler depuis votre espace Stripe a tout moment. Votre acces Premium reste actif jusqu'a la fin de la periode payee.",
   },
   {
@@ -70,30 +64,22 @@ export default function PremiumPage() {
     data: unknown;
     isPending: boolean;
   };
-  const { userId, email } = useMemo(
-    () => safeUserAndEmail(session),
-    [session],
-  );
+  const { userId, email } = useMemo(() => safeUserAndEmail(session), [session]);
   const [loading, setLoading] = useState(false);
 
-  async function startCheckout(
-    planId: 'PREMIUM' | 'PACK_COMMERCIAL',
-  ) {
+  async function startCheckout(planId: 'PREMIUM' | 'PACK_COMMERCIAL') {
     if (!userId || !email) {
       window.location.href = '/login';
       return;
     }
     setLoading(true);
     try {
-      const res = await fetch(
-        `${API_BASE}/payment/payments/subscribe`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ userId, email, planId }),
-        },
-      );
+      const res = await fetch(`${API_URL}/payment/payments/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ userId, email, planId }),
+      });
       if (!res.ok) throw new Error(`Erreur ${res.status}`);
       const json = (await res.json()) as { checkoutUrl: string };
       window.location.href = json.checkoutUrl;
@@ -111,22 +97,14 @@ export default function PremiumPage() {
         </span>
         <h1 className="font-display font-black text-[36px] sm:text-[52px] text-white mt-4 leading-tight">
           Passe Yunicity
-          <br />a la vitesse{' '}
-          <span className="text-[#2A2FFF]">superieure.</span>
+          <br />a la vitesse <span className="text-[#2A2FFF]">superieure.</span>
         </h1>
         <p className="font-body text-[18px] text-[#9395FF] mt-4 max-w-lg mx-auto">
           Debloquez l&apos;acces complet a la ville.
         </p>
         <div className="flex flex-wrap justify-center gap-6 mt-8">
-          {[
-            '7 jours gratuits',
-            'Sans engagement',
-            'Resiliable a tout moment',
-          ].map((g) => (
-            <span
-              key={g}
-              className="font-mono text-[12px] text-[#6B7280]"
-            >
+          {['7 jours gratuits', 'Sans engagement', 'Resiliable a tout moment'].map((g) => (
+            <span key={g} className="font-mono text-[12px] text-[#6B7280]">
               &#10003; {g}
             </span>
           ))}
@@ -140,15 +118,10 @@ export default function PremiumPage() {
           <span className="font-mono text-[10px] uppercase tracking-widest text-[#6B7280] bg-[#F3F4F6]/10 px-3 py-1 rounded-full">
             ACTUEL
           </span>
-          <p className="font-display font-bold text-[40px] text-white mt-4">
-            Gratuit
-          </p>
+          <p className="font-display font-bold text-[40px] text-white mt-4">Gratuit</p>
           <ul className="mt-6 space-y-3">
             {FREE_FEATURES.map((f) => (
-              <li
-                key={f}
-                className="flex items-start gap-2 text-[14px]"
-              >
+              <li key={f} className="flex items-start gap-2 text-[14px]">
                 <span className="text-[#6B7280]">&#10003;</span>
                 <span className="text-[#9395FF]">{f}</span>
               </li>
@@ -173,19 +146,12 @@ export default function PremiumPage() {
             <span className="font-display font-black text-[56px] text-white leading-none">
               4,99&euro;
             </span>
-            <span className="font-body text-[20px] text-white/70 ml-1">
-              /mois
-            </span>
+            <span className="font-body text-[20px] text-white/70 ml-1">/mois</span>
           </div>
-          <p className="font-mono text-[12px] text-white/60 mt-1">
-            7 jours d&apos;essai gratuit
-          </p>
+          <p className="font-mono text-[12px] text-white/60 mt-1">7 jours d&apos;essai gratuit</p>
           <ul className="mt-6 space-y-3">
             {PREMIUM_FEATURES.map((f, i) => (
-              <li
-                key={f}
-                className="flex items-start gap-2 text-[14px] text-white"
-              >
+              <li key={f} className="flex items-start gap-2 text-[14px] text-white">
                 <span>{i === 0 ? '\u2713' : '\u2726'}</span>
                 <span>{f}</span>
               </li>
@@ -197,9 +163,7 @@ export default function PremiumPage() {
             onClick={() => void startCheckout('PREMIUM')}
             className="mt-8 w-full h-12 bg-white text-[#2A2FFF] font-display font-semibold text-[15px] rounded-xl hover:bg-[#E8E9FF] shadow-lg transition-all disabled:opacity-70"
           >
-            {loading
-              ? 'Redirection vers Stripe...'
-              : "Commencer l'essai gratuit"}
+            {loading ? 'Redirection vers Stripe...' : "Commencer l'essai gratuit"}
           </button>
         </div>
 
@@ -209,22 +173,15 @@ export default function PremiumPage() {
             PRO
           </span>
           <div className="mt-4">
-            <span className="font-display font-bold text-[40px] text-[#0D0F2E]">
-              20&euro;
-            </span>
-            <span className="font-body text-[16px] text-[#6B7280] ml-1">
-              /mois
-            </span>
+            <span className="font-display font-bold text-[40px] text-[#0D0F2E]">20&euro;</span>
+            <span className="font-body text-[16px] text-[#6B7280] ml-1">/mois</span>
           </div>
           <p className="font-body text-[14px] text-[#6B7280] italic mt-2">
             Pour commercants, associations et freelances verifies
           </p>
           <ul className="mt-6 space-y-3">
             {COMMERCIAL_FEATURES.map((f) => (
-              <li
-                key={f}
-                className="flex items-start gap-2 text-[14px]"
-              >
+              <li key={f} className="flex items-start gap-2 text-[14px]">
                 <span className="text-[#16A34A]">&#10003;</span>
                 <span className="text-[#374151]">{f}</span>
               </li>
@@ -245,18 +202,11 @@ export default function PremiumPage() {
           Questions frequentes
         </h2>
         {FAQ.map((item) => (
-          <details
-            key={item.q}
-            className="border-b border-[#F3F4F6] group"
-          >
+          <details key={item.q} className="border-b border-[#F3F4F6] group">
             <summary className="py-4 font-display font-semibold text-[16px] text-[#0D0F2E] cursor-pointer list-none flex justify-between items-center group-open:text-[#2A2FFF]">
               {item.q}
-              <span className="text-[20px] group-open:hidden">
-                +
-              </span>
-              <span className="text-[20px] hidden group-open:inline">
-                &minus;
-              </span>
+              <span className="text-[20px] group-open:hidden">+</span>
+              <span className="text-[20px] hidden group-open:inline">&minus;</span>
             </summary>
             <p className="font-body text-[15px] text-[#6B7280] pt-2 pb-4 leading-relaxed">
               {item.a}

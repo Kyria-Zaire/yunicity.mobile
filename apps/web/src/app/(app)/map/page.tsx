@@ -5,15 +5,16 @@ import Link from 'next/link';
 import type { MapActor, ProfileType } from '@/hooks/use-map-data';
 import { useMapData } from '@/hooks/use-map-data';
 import { YunicityMap } from '@/components/map/yunicity-map';
+import { REIMS_CENTER } from '@/lib/config';
 
 type FilterKey = 'all' | ProfileType;
 
 const FILTERS: { key: FilterKey; label: string }[] = [
   { key: 'all', label: 'Tous' },
-  { key: 'commercial', label: 'Commerçants' },
+  { key: 'commercial', label: 'Commercants' },
   { key: 'association', label: 'Associations' },
   { key: 'freelance', label: 'Freelances' },
-  { key: 'ecole', label: 'Écoles' },
+  { key: 'ecole', label: 'Ecoles' },
 ];
 
 const badgeByType: Record<ProfileType, string> = {
@@ -43,8 +44,14 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
+function profileTypeLabel(type: ProfileType) {
+  if (type === 'ecole') return 'Ecole';
+  if (type === 'yunicitizen') return 'Citoyen';
+  return type;
+}
+
 export default function MapPage() {
-  const [center, setCenter] = useState<[number, number]>([4.0317, 49.2583]);
+  const [center, setCenter] = useState<[number, number]>(REIMS_CENTER);
   const [zoom, setZoom] = useState(13);
   const [selected, setSelected] = useState<MapActor | null>(null);
   const [q, setQ] = useState('');
@@ -64,20 +71,7 @@ export default function MapPage() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   return (
-    <div className="relative h-[calc(100dvh-64px)]">
-      <div className="absolute inset-0">
-        <YunicityMap
-          center={center}
-          zoom={zoom}
-          actors={filtered.map((a) => ({ ...a }))}
-          onActorClick={(actor) => {
-            setSelected(actor);
-            setCenter(actor.coordinates);
-            setZoom(clamp(zoom, 14, 16));
-          }}
-        />
-      </div>
-
+    <div style={{ height: 'calc(100dvh - 64px)' }} className="relative flex overflow-hidden w-full">
       {/* Sidebar desktop */}
       <aside className="hidden md:flex absolute left-4 top-4 bottom-4 w-[320px] z-20 bg-[#0D0F2E]/95 backdrop-blur-md rounded-2xl border border-white/10 shadow-hover overflow-hidden flex-col">
         <div className="p-4 border-b border-white/10">
@@ -111,7 +105,9 @@ export default function MapPage() {
 
           <div className="mt-5">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] uppercase tracking-widest text-[#9395FF]">Rayon</span>
+              <span className="font-mono text-[10px] uppercase tracking-widest text-[#9395FF]">
+                Rayon
+              </span>
               <span className="font-mono text-[10px] text-white/80">{`Rayon : ${radiusKm.toFixed(radiusKm >= 1 ? 0 : 1)}km`}</span>
             </div>
             <input
@@ -129,11 +125,11 @@ export default function MapPage() {
 
         <div className="flex-1 overflow-auto p-2">
           {loading && (
-            <div className="p-3 text-white/70 font-body text-sm">Chargement des acteurs…</div>
+            <div className="p-3 text-white/70 font-body text-sm">Chargement des acteurs...</div>
           )}
           {error && <div className="p-3 text-[#FEE2E2] font-body text-sm">{error}</div>}
           {!loading && !filtered.length && (
-            <div className="p-3 text-white/70 font-body text-sm">Aucun résultat dans ce rayon.</div>
+            <div className="p-3 text-white/70 font-body text-sm">Aucun resultat dans ce rayon.</div>
           )}
 
           <div className="grid gap-1">
@@ -160,16 +156,20 @@ export default function MapPage() {
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-body text-sm text-white truncate">{a.displayName}</span>
                       <span className="font-mono text-[10px] text-white/60 shrink-0">
-                        {typeof (a as any).distanceKm === 'number'
-                          ? `${Math.max(0.1, Math.round(((a as any).distanceKm as number) * 10) / 10)}km`
+                        {typeof (a as Record<string, unknown>).distanceKm === 'number'
+                          ? `${Math.max(0.1, Math.round(((a as Record<string, unknown>).distanceKm as number) * 10) / 10)}km`
                           : ''}
                       </span>
                     </div>
                     <div className="mt-1 flex items-center gap-2">
-                      <span className={`inline-flex items-center font-mono text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-full ${badgeByType[a.profileType]}`}>
-                        {a.profileType === 'ecole' ? 'École' : a.profileType === 'yunicitizen' ? 'Citoyen' : a.profileType}
+                      <span
+                        className={`inline-flex items-center font-mono text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-full ${badgeByType[a.profileType]}`}
+                      >
+                        {profileTypeLabel(a.profileType)}
                       </span>
-                      <span className="font-body text-[12px] text-white/50 truncate">{a.district ?? 'Reims'}</span>
+                      <span className="font-body text-[12px] text-white/50 truncate">
+                        {a.district ?? 'Reims'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -178,6 +178,20 @@ export default function MapPage() {
           </div>
         </div>
       </aside>
+
+      {/* Map — takes remaining space */}
+      <div className="flex-1 relative" style={{ height: '100%', minHeight: 0 }}>
+        <YunicityMap
+          center={center}
+          zoom={zoom}
+          actors={filtered.map((a) => ({ ...a }))}
+          onActorClick={(actor) => {
+            setSelected(actor);
+            setCenter(actor.coordinates);
+            setZoom(clamp(zoom, 14, 16));
+          }}
+        />
+      </div>
 
       {/* Mobile FAB */}
       <button
@@ -208,7 +222,14 @@ export default function MapPage() {
                   onClick={() => setMobileFiltersOpen(false)}
                   aria-label="Fermer"
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2"
+                  >
                     <path d="M18 6L6 18" />
                     <path d="M6 6l12 12" />
                   </svg>
@@ -243,7 +264,9 @@ export default function MapPage() {
 
               <div className="mt-5">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-[#9395FF]">Rayon</span>
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-[#9395FF]">
+                    Rayon
+                  </span>
                   <span className="font-mono text-[10px] text-white/80">{`Rayon : ${radiusKm.toFixed(radiusKm >= 1 ? 0 : 1)}km`}</span>
                 </div>
                 <input
@@ -259,7 +282,7 @@ export default function MapPage() {
               </div>
 
               <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
-                <span className="font-body text-white/70 text-sm">{filtered.length} résultats</span>
+                <span className="font-body text-white/70 text-sm">{filtered.length} resultats</span>
                 <button
                   type="button"
                   className="h-11 px-5 rounded-xl bg-[#2A2FFF] text-white font-display font-semibold shadow-primary"
@@ -273,13 +296,13 @@ export default function MapPage() {
         </div>
       )}
 
-      {/* Drawer détail */}
+      {/* Drawer detail */}
       {selected && (
         <div className="fixed inset-0 z-30">
           <button
             type="button"
             className="absolute inset-0 bg-black/30"
-            aria-label="Fermer le détail"
+            aria-label="Fermer le detail"
             onClick={() => setSelected(null)}
           />
           <aside className="absolute right-0 top-0 bottom-0 w-full max-w-[380px] bg-white shadow-hover border-l border-[#E5E7EB] p-5 overflow-auto">
@@ -289,14 +312,18 @@ export default function MapPage() {
                   {initials(selected.displayName)}
                 </div>
                 <div className="min-w-0">
-                  <h2 className="font-display font-black text-xl text-[#0D0F2E] truncate">{selected.displayName}</h2>
+                  <h2 className="font-display font-black text-xl text-[#0D0F2E] truncate">
+                    {selected.displayName}
+                  </h2>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className={`inline-flex items-center font-mono text-[10px] uppercase tracking-widest px-3 py-1 rounded-full ${badgeByType[selected.profileType]}`}>
+                    <span
+                      className={`inline-flex items-center font-mono text-[10px] uppercase tracking-widest px-3 py-1 rounded-full ${badgeByType[selected.profileType]}`}
+                    >
                       {selected.profileType}
                     </span>
                     {selected.isVerified && (
                       <span className="inline-flex items-center font-mono text-[10px] uppercase tracking-widest px-3 py-1 rounded-full bg-[#DCFCE7] text-[#16A34A]">
-                        Vérifié ✓
+                        Verifie ✓
                       </span>
                     )}
                   </div>
@@ -309,7 +336,14 @@ export default function MapPage() {
                 aria-label="Fermer"
                 onClick={() => setSelected(null)}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0D0F2E" strokeWidth="2">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#0D0F2E"
+                  strokeWidth="2"
+                >
                   <path d="M18 6L6 18" />
                   <path d="M6 6l12 12" />
                 </svg>
@@ -318,10 +352,13 @@ export default function MapPage() {
 
             <div className="mt-6">
               <p className="font-body text-sm text-[#6B7280] leading-relaxed">
-                {(selected.district ? `${selected.district}, ` : '') + (selected.city ? selected.city.toUpperCase() : 'REIMS')}
+                {(selected.district ? `${selected.district}, ` : '') +
+                  (selected.city ? selected.city.toUpperCase() : 'REIMS')}
               </p>
               {selected.description && (
-                <p className="font-body text-[15px] text-[#0D0F2E] leading-relaxed mt-3">{selected.description}</p>
+                <p className="font-body text-[15px] text-[#0D0F2E] leading-relaxed mt-3">
+                  {selected.description}
+                </p>
               )}
             </div>
 
@@ -341,9 +378,11 @@ export default function MapPage() {
             </div>
 
             <div className="mt-8 pt-6 border-t border-[#F3F4F6]">
-              <p className="font-mono text-[10px] uppercase tracking-widest text-[#6B7280]">Astuce</p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[#6B7280]">
+                Astuce
+              </p>
               <p className="font-body text-sm text-[#6B7280] mt-2">
-                Clique sur un marqueur pour ouvrir le détail, ou sur un résultat dans la liste.
+                Clique sur un marqueur pour ouvrir le detail, ou sur un resultat dans la liste.
               </p>
             </div>
           </aside>
@@ -356,4 +395,3 @@ export default function MapPage() {
     </div>
   );
 }
-

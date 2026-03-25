@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+import { API_URL } from '@/lib/config';
 
 export function WaitlistForm() {
   const [email, setEmail] = useState('');
@@ -13,7 +12,7 @@ export function WaitlistForm() {
     if (!email.trim()) return;
     setStatus('loading');
     try {
-      const res = await fetch(`${API_BASE}/crm/partners`, {
+      const res = await fetch(`${API_URL}/crm/partners`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -41,17 +40,14 @@ export function WaitlistForm() {
 
   return (
     <div className="w-full max-w-md mx-auto mt-10">
-      <form
-        onSubmit={submit}
-        className="flex flex-col sm:flex-row gap-3"
-      >
+      <form onSubmit={submit} className="flex flex-col sm:flex-row gap-3">
         <input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="ton@email.fr"
-          className="flex-1 h-12 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 px-4 outline-none focus:ring-2 focus:ring-[#2A2FFF]"
+          className="w-full h-14 sm:h-12 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 px-5 sm:px-4 text-base sm:text-sm outline-none focus:ring-2 focus:ring-[#2A2FFF]"
         />
         <button
           type="submit"

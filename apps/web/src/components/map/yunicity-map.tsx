@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import type { MapActor, ProfileType } from '@/hooks/use-map-data';
 
 type Props = {
@@ -46,31 +46,68 @@ const iconSvg: Record<ProfileType, string> = {
 export function YunicityMap({ center, zoom, actors, onActorClick }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<import('maplibre-gl').Map | null>(null);
-  const markersRef = useRef<Map<string, import('maplibre-gl').Marker>>(new Map());
+  const markersRef = useRef<import('maplibre-gl').Marker[]>([]);
+  const observerRef = useRef<ResizeObserver | null>(null);
+  const readyRef = useRef(false);
 
-  const markerStyle = useMemo(
-    () => (color: string) => `
+  // Store latest callback in ref to avoid stale closures in marker click handlers
+  const onActorClickRef = useRef(onActorClick);
+  onActorClickRef.current = onActorClick;
+
+  const createMarkerElement = useCallback((actor: MapActor): HTMLElement => {
+    const color = typeColors[actor.profileType];
+    const el = document.createElement('div');
+    el.style.cssText = `
       width: 40px;
       height: 40px;
       background: ${color};
       border-radius: 50%;
-      border: 2.5px solid white;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      border: 3px solid white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 9px;
-    `,
-    [],
-  );
+      transition: box-shadow 0.15s ease;
+      user-select: none;
+      will-change: box-shadow;
+      transform-origin: center center;
+      position: relative;
+      z-index: 1;
+    `;
+    el.innerHTML = iconSvg[actor.profileType];
+    el.title = actor.displayName;
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', `Ouvrir ${actor.displayName}`);
 
+    el.addEventListener('mouseenter', () => {
+      el.style.boxShadow = '0 6px 24px rgba(0,0,0,0.45)';
+      el.style.zIndex = '10';
+      el.style.border = '3px solid rgba(255,255,255,0.9)';
+    });
+    el.addEventListener('mouseleave', () => {
+      el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)';
+      el.style.zIndex = '1';
+      el.style.border = '3px solid white';
+    });
+
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onActorClickRef.current(actor);
+    });
+
+    return el;
+  }, []);
+
+  // Init map once
   useEffect(() => {
-    let alive = true;
+    let isMounted = true;
 
     async function init() {
       const maplibregl = (await import('maplibre-gl')).default;
-      if (!alive) return;
+      await import('maplibre-gl/dist/maplibre-gl.css');
+      if (!isMounted) return;
       if (!containerRef.current) return;
       if (mapRef.current) return;
 
@@ -84,7 +121,10 @@ export function YunicityMap({ center, zoom, actors, onActorClick }: Props) {
         attributionControl: false,
       });
 
-      map.addControl(new maplibregl.NavigationControl({ showCompass: true, visualizePitch: true }), 'bottom-right');
+      map.addControl(
+        new maplibregl.NavigationControl({ showCompass: true, visualizePitch: true }),
+        'bottom-right',
+      );
       map.addControl(
         new maplibregl.GeolocateControl({
           positionOptions: { enableHighAccuracy: true },
@@ -95,56 +135,70 @@ export function YunicityMap({ center, zoom, actors, onActorClick }: Props) {
         'bottom-right',
       );
 
+      map.on('load', () => {
+        map.resize();
+      });
+
       mapRef.current = map;
+      readyRef.current = true;
+
+      const ro = new ResizeObserver(() => {
+        mapRef.current?.resize();
+      });
+      if (containerRef.current) {
+        ro.observe(containerRef.current);
+      }
+      observerRef.current = ro;
     }
 
     void init();
     return () => {
-      alive = false;
+      isMounted = false;
+      readyRef.current = false;
+      observerRef.current?.disconnect();
+      observerRef.current = null;
       markersRef.current.forEach((m) => m.remove());
-      markersRef.current.clear();
+      markersRef.current = [];
       mapRef.current?.remove();
       mapRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Fly to new center/zoom
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     map.flyTo({ center, zoom, essential: true, duration: 650 });
   }, [center, zoom]);
 
+  // Sync markers — clear all and recreate to avoid stale closures
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
-    const nextIds = new Set(actors.map((a) => a.id));
-    for (const [id, marker] of markersRef.current.entries()) {
-      if (!nextIds.has(id)) {
-        marker.remove();
-        markersRef.current.delete(id);
-      }
-    }
+    // Remove all existing markers
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
 
+    // Re-import is instant (module already cached from init)
     (async () => {
       const ml = (await import('maplibre-gl')).default;
       actors.forEach((actor) => {
-        if (markersRef.current.has(actor.id)) return;
-        const el = document.createElement('div');
-        const color = typeColors[actor.profileType];
-        el.style.cssText = markerStyle(color);
-        el.innerHTML = iconSvg[actor.profileType];
-        el.title = actor.displayName;
-        el.setAttribute('role', 'button');
-        el.setAttribute('aria-label', `Ouvrir ${actor.displayName}`);
-        el.addEventListener('click', () => onActorClick(actor));
-        const marker = new ml.Marker({ element: el }).setLngLat(actor.coordinates).addTo(map);
-        markersRef.current.set(actor.id, marker);
+        const el = createMarkerElement(actor);
+        const marker = new ml.Marker({ element: el, anchor: 'center' })
+          .setLngLat(actor.coordinates)
+          .addTo(map);
+        markersRef.current.push(marker);
       });
     })();
-  }, [actors, markerStyle, onActorClick]);
+  }, [actors, createMarkerElement]);
 
-  return <div ref={containerRef} className="w-full h-full" aria-label="Carte de la ville" />;
+  return (
+    <div
+      ref={containerRef}
+      style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}
+      aria-label="Carte de la ville"
+    />
+  );
 }
-

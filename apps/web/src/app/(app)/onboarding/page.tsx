@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
+import { API_URL } from '@/lib/config';
 
 const QUARTIERS = [
   'Croix-Rouge',
@@ -32,8 +33,6 @@ const MOCK_TRIBES = [
   { id: '2', name: 'Vélo & quartiers', desc: 'Balades et mobilité douce.', members: 64 },
   { id: '3', name: 'Foodies Reims', desc: 'Bonnes adresses et convivialité.', members: 201 },
 ];
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -73,7 +72,7 @@ export default function OnboardingPage() {
     }
     setSaving(true);
     try {
-      await fetch(`${API_BASE}/users/${userId}`, {
+      await fetch(`${API_URL}/users/${userId}`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -93,7 +92,7 @@ export default function OnboardingPage() {
     }
   }, [session?.user?.id, quartier, interests, router]);
 
-  const skipToDashboard = () => {
+  const handleSkipToDashboard = () => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('onboarding_done', '1');
     }
@@ -113,11 +112,7 @@ export default function OnboardingPage() {
           <div key={d.label} className="flex flex-col items-center gap-1">
             <span
               className={`h-2.5 w-2.5 rounded-full transition-all ${
-                d.done
-                  ? 'bg-[#16A34A]'
-                  : d.active
-                    ? 'bg-[#2A2FFF] animate-pulse'
-                    : 'bg-[#D1D5DB]'
+                d.done ? 'bg-[#16A34A]' : d.active ? 'bg-[#2A2FFF] animate-pulse' : 'bg-[#D1D5DB]'
               }`}
             />
             <span className="font-mono text-[9px] text-[#6B7280] uppercase tracking-wider">
@@ -198,9 +193,7 @@ export default function OnboardingPage() {
                     type="button"
                     onClick={() => toggleInterest(it.id)}
                     className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
-                      on
-                        ? 'bg-[#2A2FFF] text-white'
-                        : 'bg-[#F3F4F6] text-[#374151]'
+                      on ? 'bg-[#2A2FFF] text-white' : 'bg-[#F3F4F6] text-[#374151]'
                     }`}
                   >
                     {it.label}
@@ -210,7 +203,7 @@ export default function OnboardingPage() {
             </div>
             <button
               type="button"
-              onClick={skipToDashboard}
+              onClick={handleSkipToDashboard}
               className="mt-8 text-sm text-[#9395FF] underline-offset-4 hover:underline self-start"
             >
               Je complèterai plus tard
@@ -266,7 +259,7 @@ export default function OnboardingPage() {
             </button>
             <button
               type="button"
-              onClick={skipToDashboard}
+              onClick={handleSkipToDashboard}
               className="mt-3 text-sm text-[#9395FF]"
             >
               Passer pour l&apos;instant
