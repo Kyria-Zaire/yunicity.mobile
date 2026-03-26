@@ -68,6 +68,11 @@ async function proxyRequest(
       'X-Forwarded-For': req.ip,
     };
 
+    // Forward cookies pour l'authentification Better Auth (session httpOnly)
+    if (req.headers.cookie) {
+      headers['cookie'] = req.headers.cookie;
+    }
+
     const pathOnly = targetPath.split('?')[0] ?? targetPath;
     const isUserServicePath =
       /^\/users(\/|$)/i.test(pathOnly) ||

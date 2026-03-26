@@ -25,7 +25,7 @@ const schema = z.object({
     .default('http://localhost:3000,http://localhost:3010'),
 
   // Admin
-  ADMIN_API_KEY: z.string().default('dev_admin_key_yunicity_2026'),
+  ADMIN_API_KEY: z.string().min(32, 'ADMIN_API_KEY requis'),
 });
 
 const parsed = schema.safeParse(process.env);

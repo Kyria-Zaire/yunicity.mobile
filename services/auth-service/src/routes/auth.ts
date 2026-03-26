@@ -1,16 +1,67 @@
 import type { FastifyInstance } from 'fastify';
+import { prisma } from '@yunicity/database';
 import { auth } from '../auth/index.js';
 import { toNodeHandler } from 'better-auth/node';
 import { verifyEmailOTP, verifySmsOTP } from '../auth/otp.js';
 import { isTrustedInternalService } from '../utils/internal-service.js';
 
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
 export async function authRoutes(app: FastifyInstance): Promise<void> {
-  // Better Auth gère ses propres routes via un handler Node.js natif
-  // On le monte sur /auth/* dans Fastify
   const handler = toNodeHandler(auth);
 
+  // Lockout check BEFORE Better Auth processes sign-in
+  app.addHook('onRequest', async (req, reply) => {
+    if (req.method !== 'POST' || !req.url.includes('/auth/sign-in/email')) return;
+
+    const body = req.body as { email?: string } | undefined;
+    if (!body?.email) return;
+
+    const user = await prisma.user.findUnique({
+      where: { email: body.email.toLowerCase().trim() },
+      select: { lockedUntil: true },
+    });
+
+    if (user?.lockedUntil && user.lockedUntil > new Date()) {
+      const minutesLeft = Math.ceil(
+        (user.lockedUntil.getTime() - Date.now()) / 60_000,
+      );
+      await reply.status(429).send({
+        code: 'ACCOUNT_LOCKED',
+        message: `Compte verrouillé. Réessayez dans ${minutesLeft} minute(s).`,
+      });
+    }
+  });
+
+  // Track failed sign-in attempts AFTER Better Auth responds
+  app.addHook('onResponse', async (req, reply) => {
+    if (req.method !== 'POST' || !req.url.includes('/auth/sign-in/email')) return;
+    if (reply.statusCode < 400) return; // Success — lockout reset via databaseHooks
+
+    const body = req.body as { email?: string } | undefined;
+    if (!body?.email) return;
+
+    const user = await prisma.user.findUnique({
+      where: { email: body.email.toLowerCase().trim() },
+      select: { id: true, loginAttempts: true },
+    });
+    if (!user) return;
+
+    const newAttempts = user.loginAttempts + 1;
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        loginAttempts: newAttempts,
+        ...(newAttempts >= MAX_LOGIN_ATTEMPTS
+          ? { lockedUntil: new Date(Date.now() + LOCKOUT_DURATION_MS) }
+          : {}),
+      },
+    });
+  });
+
+  // Better Auth catch-all
   app.all('/auth/*', async (req, reply) => {
-    // Adapter la requête Fastify vers Node IncomingMessage
     reply.hijack();
     handler(req.raw, reply.raw);
   });

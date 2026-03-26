@@ -1,8 +1,8 @@
-import { API_URL, ADMIN_KEY } from '@/lib/config';
+// Admin API calls go through /api/admin/* server-side proxy
+// The ADMIN_API_KEY is injected server-side — never exposed to the browser
 
 const headers = {
   'Content-Type': 'application/json',
-  'X-Admin-Key': ADMIN_KEY,
 };
 
 export interface AdminStats {
@@ -29,7 +29,7 @@ export interface PaginatedUsers {
 
 export async function getAdminStats(): Promise<AdminStats> {
   try {
-    const res = await fetch(`${API_URL}/users/admin/stats`, { headers, cache: 'no-store' });
+    const res = await fetch('/api/admin/stats', { headers, cache: 'no-store' });
     if (!res.ok) throw new Error('API error');
     return res.json() as Promise<AdminStats>;
   } catch {
@@ -43,7 +43,7 @@ export async function getAdminUsers(params?: {
   cursor?: string | undefined;
 }): Promise<PaginatedUsers> {
   try {
-    const url = new URL(`${API_URL}/users/admin/users`);
+    const url = new URL('/api/admin/users', window.location.origin);
     if (params?.status) url.searchParams.set('status', params.status);
     if (params?.profileType) url.searchParams.set('profileType', params.profileType);
     if (params?.cursor) url.searchParams.set('cursor', params.cursor);
@@ -58,7 +58,7 @@ export async function getAdminUsers(params?: {
 
 export async function verifyUser(userId: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/users/admin/users/${userId}/verify`, {
+    const res = await fetch(`/api/admin/users/${userId}/verify`, {
       method: 'PATCH',
       headers,
     });
@@ -70,7 +70,7 @@ export async function verifyUser(userId: string): Promise<boolean> {
 
 export async function rejectUser(userId: string, reason: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_URL}/users/admin/users/${userId}/reject`, {
+    const res = await fetch(`/api/admin/users/${userId}/reject`, {
       method: 'PATCH',
       headers,
       body: JSON.stringify({ reason }),

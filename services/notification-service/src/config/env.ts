@@ -18,6 +18,9 @@ const schema = z.object({
     .string()
     .default('http://localhost:3000,http://localhost:3010'),
 
+  // Auth service (pour validation session WebSocket)
+  AUTH_SERVICE_URL: z.string().url().default('http://auth-service:3001'),
+
   // VAPID — Web Push (optionnel en dev)
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),

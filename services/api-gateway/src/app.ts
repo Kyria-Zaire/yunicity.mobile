@@ -6,6 +6,7 @@ import rateLimitPlugin from './plugins/rate-limit.js';
 import requestIdMiddleware from './middleware/request-id.js';
 import { registerSecurityAuditHook } from './middleware/audit-log.js';
 import { registerAuthSensitiveRateLimit } from './middleware/auth-sensitive-rate-limit.js';
+import { registerCsrfProtection } from './middleware/csrf.js';
 import { healthRoutes } from './routes/health.js';
 import { proxyRoutes } from './routes/proxy.js';
 
@@ -36,6 +37,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Middleware
   await app.register(requestIdMiddleware);
+  registerCsrfProtection(app);
   registerAuthSensitiveRateLimit(app);
   registerSecurityAuditHook(app);
 

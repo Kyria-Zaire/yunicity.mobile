@@ -35,7 +35,7 @@ const schema = z.object({
   INTERNAL_SERVICE_NAMES: z.string().optional(),
 
   // Admin
-  ADMIN_API_KEY: z.string().default('dev_admin_key_yunicity_2026'),
+  ADMIN_API_KEY: z.string().min(32, 'ADMIN_API_KEY requis'),
 
   // ClamAV — optionnel en dev
   CLAMAV_HOST: z.string().optional(),

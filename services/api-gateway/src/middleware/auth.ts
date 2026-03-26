@@ -1,4 +1,5 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import { env } from '../config/env.js';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -12,17 +13,16 @@ declare module 'fastify' {
 }
 
 /**
- * Middleware d'authentification — à utiliser avec preHandler sur les routes protégées.
- * Implémentation complète JWT arrivera en S1 avec Better Auth.
- * Pour S0 : stub qui laisse passer en dev, bloque en prod sans token.
+ * Middleware d'authentification — valide la session via Better Auth (auth-service).
+ * Vérifie le cookie de session httpOnly en appelant /auth/session/verify.
  */
 export async function requireAuth(
   req: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
-  const authHeader = req.headers['authorization'];
+  const cookie = req.headers.cookie;
 
-  if (!authHeader?.startsWith('Bearer ')) {
+  if (!cookie || !cookie.includes('yunicity')) {
     await reply.status(401).send({
       code: 'UNAUTHORIZED',
       message: 'Authentication required',
@@ -30,14 +30,54 @@ export async function requireAuth(
     return;
   }
 
-  // TODO(S1): Implémenter la validation JWT Better Auth ici
-  // Pour S0 : stub minimal
-  req.user = {
-    id: 'stub-user-id',
-    email: 'stub@yunicity.fr',
-    profileType: 'yunicitizen',
-    verificationStatus: 'verified',
-  };
+  try {
+    const res = await fetch(
+      `${env.AUTH_SERVICE_URL}/auth/session/verify`,
+      {
+        method: 'GET',
+        headers: { cookie },
+        signal: AbortSignal.timeout(3000),
+      },
+    );
+
+    if (!res.ok) {
+      await reply.status(401).send({
+        code: 'UNAUTHORIZED',
+        message: 'Session invalide ou expirée',
+      });
+      return;
+    }
+
+    const data = (await res.json()) as {
+      user?: {
+        id: string;
+        email: string;
+        profileType?: string;
+        verificationStatus?: string;
+      };
+    };
+
+    if (!data.user?.id) {
+      await reply.status(401).send({
+        code: 'UNAUTHORIZED',
+        message: 'Session invalide',
+      });
+      return;
+    }
+
+    req.user = {
+      id: data.user.id,
+      email: data.user.email,
+      profileType: data.user.profileType ?? 'yunicitizen',
+      verificationStatus: data.user.verificationStatus ?? 'pending',
+    };
+  } catch (err) {
+    req.log.error({ err }, 'Auth service unreachable');
+    await reply.status(503).send({
+      code: 'AUTH_SERVICE_UNAVAILABLE',
+      message: 'Service d\'authentification indisponible',
+    });
+  }
 }
 
 /**

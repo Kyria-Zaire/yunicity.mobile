@@ -3,7 +3,7 @@ import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { twoFactor } from 'better-auth/plugins';
 import { prisma } from '@yunicity/database';
 import { env } from '../config/env.js';
-import { hashPassword, verifyPassword } from './password.js';
+import { hashPassword, verifyPassword, validatePasswordStrength } from './password.js';
 
 export const auth = betterAuth({
   // Adaptateur PostgreSQL via Prisma
@@ -34,6 +34,28 @@ export const auth = betterAuth({
     password: {
       hash: hashPassword,
       verify: ({ hash, password }) => verifyPassword(hash, password),
+    },
+    // Validation de force du mot de passe à l'inscription
+    signUpValidator: (data: { password: string }) => {
+      const result = validatePasswordStrength(data.password);
+      if (!result.valid) {
+        return { valid: false, message: result.errors.join(', ') };
+      }
+      return { valid: true };
+    },
+  },
+
+  // Reset lockout on successful session creation
+  databaseHooks: {
+    session: {
+      create: {
+        after: async (session) => {
+          await prisma.user.update({
+            where: { id: session.userId },
+            data: { loginAttempts: 0, lockedUntil: null },
+          });
+        },
+      },
     },
   },
 
