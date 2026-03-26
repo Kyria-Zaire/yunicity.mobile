@@ -12,7 +12,7 @@ const schema = z.object({
   DATABASE_URL: z.string().min(10),
 
   // Redis
-  REDIS_URL: z.string().default('redis://:changeme_local@redis:6379'),
+  REDIS_URL: z.string().min(10, 'REDIS_URL requis'),
 
   // Auth
   AUTH_SECRET: z

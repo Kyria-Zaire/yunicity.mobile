@@ -48,9 +48,14 @@ export async function paymentRoutes(
   });
 
   app.post('/payments/webhook', async (req, reply) => {
-    const sig = req.headers['stripe-signature'] as
-      | string
-      | undefined;
+    const sig = req.headers['stripe-signature'] as string | undefined;
+    const isProd = process.env['NODE_ENV'] === 'production';
+
+    // Production: signature OBLIGATOIRE
+    if (isProd && !sig) {
+      req.log.warn({ ip: req.ip }, 'Webhook Stripe sans signature rejete');
+      return reply.status(400).send({ code: 'MISSING_SIGNATURE' });
+    }
 
     if (sig) {
       const payload = Buffer.from(
@@ -61,11 +66,14 @@ export async function paymentRoutes(
 
       const event = constructWebhookEvent(payload, sig);
       if (!event) {
+        req.log.warn({ ip: req.ip }, 'Signature Stripe invalide');
         return reply.status(400).send({ code: 'INVALID_SIGNATURE' });
       }
 
       await PaymentService.handleWebhook(event);
     } else {
+      // Dev uniquement — accepter sans signature
+      req.log.info('Webhook Stripe sans signature — mode dev');
       await PaymentService.handleWebhook(
         req.body as Parameters<typeof PaymentService.handleWebhook>[0],
       );

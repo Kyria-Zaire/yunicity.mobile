@@ -6,7 +6,7 @@ const schema = z.object({
     .default('development'),
   PORT: z.coerce.number().default(3006),
   SERVICE_NAME: z.string().default('notification-service'),
-  REDIS_URL: z.string().default('redis://:changeme_local@redis:6379'),
+  REDIS_URL: z.string().min(10, 'REDIS_URL requis'),
   // Optionnels en dev — simulation si absents
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().email().default('noreply@yunicity.fr'),

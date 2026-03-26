@@ -1,4 +1,9 @@
+import dotenv from 'dotenv';
 import { z } from 'zod';
+
+// Charge l'env local en dev (pnpm dev)
+dotenv.config({ path: '.env.local' });
+dotenv.config();
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'staging', 'production', 'test']).default('development'),
@@ -20,7 +25,7 @@ const envSchema = z.object({
   AI_SERVICE_URL: z.string().url().default('http://ai-service:3009'),
 
   // Infrastructure
-  REDIS_URL: z.string().default('redis://:changeme_local@redis:6379'),
+  REDIS_URL: z.string().min(10, 'REDIS_URL requis'),
 
   // CORS — origines autorisées (séparées par virgule)
   // Inclut le front web Next en dev (3010) + autres clients

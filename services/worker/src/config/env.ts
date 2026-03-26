@@ -8,7 +8,7 @@ const schema = z.object({
   SERVICE_NAME: z.string().default('worker'),
 
   // Redis
-  REDIS_URL: z.string().default('redis://:changeme_local@redis:6379'),
+  REDIS_URL: z.string().min(10, 'REDIS_URL requis'),
 
   // Inter-services
   USER_SERVICE_URL: z.string().url().default('http://user-service:3002'),
