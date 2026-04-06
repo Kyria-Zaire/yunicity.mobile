@@ -1,7 +1,13 @@
-process.env['NODE_ENV'] = 'test';
-process.env['AUTH_SECRET'] = 'test_secret_min_32_chars_yunicity_ok';
-process.env['DATABASE_URL'] = 'postgresql://yunicity:changeme_local@localhost:5432/yunicity_test';
-process.env['REDIS_URL'] = 'redis://localhost:6379';
+process.env['NODE_ENV']       = 'test';
+process.env['DATABASE_URL']   = 'postgresql://test:test@localhost:5432/yunicity_test';
+process.env['REDIS_URL']      = 'redis://localhost:6379';
+process.env['AUTH_SECRET']    = 'test_secret_min_32_chars_yunicity_ok';
+process.env['ADMIN_API_KEY']  = 'test_admin_key_min_32_chars_yunicity_ok';
+process.env['R2_ACCOUNT_ID']  = 'test';
+process.env['R2_ACCESS_KEY_ID']     = 'test';
+process.env['R2_SECRET_ACCESS_KEY'] = 'test';
+process.env['R2_BUCKET_NAME']       = 'test';
+process.env['AUTH_SERVICE_URL']     = 'http://localhost:3001';
 
 import { describe, it, expect, vi } from 'vitest';
 import { UserService } from '../services/user.service.js';

@@ -1,8 +1,13 @@
-process.env['NODE_ENV'] = 'test';
-process.env['AUTH_SECRET'] = 'test_secret_min_32_chars_yunicity_ok';
-process.env['DATABASE_URL'] = 'postgresql://yunicity:changeme_local@localhost:5432/yunicity_test';
-process.env['REDIS_URL'] = 'redis://localhost:6379';
-process.env['ADMIN_API_KEY'] = 'test_admin_key_yunicity_2026_ok';
+process.env['NODE_ENV']       = 'test';
+process.env['DATABASE_URL']   = 'postgresql://test:test@localhost:5432/yunicity_test';
+process.env['REDIS_URL']      = 'redis://localhost:6379';
+process.env['AUTH_SECRET']    = 'test_secret_min_32_chars_yunicity_ok';
+process.env['ADMIN_API_KEY']  = 'test_admin_key_min_32_chars_yunicity_ok';
+process.env['R2_ACCOUNT_ID']  = 'test';
+process.env['R2_ACCESS_KEY_ID']     = 'test';
+process.env['R2_SECRET_ACCESS_KEY'] = 'test';
+process.env['R2_BUCKET_NAME']       = 'test';
+process.env['AUTH_SERVICE_URL']     = 'http://localhost:3001';
 
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import type { FastifyInstance } from 'fastify';
@@ -74,7 +79,7 @@ describe('Admin routes', () => {
     const res = await app.inject({
       method: 'GET',
       url: '/admin/stats',
-      headers: { 'x-admin-key': 'test_admin_key_yunicity_2026_ok' },
+      headers: { 'x-admin-key': 'test_admin_key_min_32_chars_yunicity_ok' },
     });
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
@@ -91,7 +96,7 @@ describe('Admin routes', () => {
       method: 'PATCH',
       url: '/admin/users/fake-id/reject',
       headers: {
-        'x-admin-key': 'test_admin_key_yunicity_2026_ok',
+        'x-admin-key': 'test_admin_key_min_32_chars_yunicity_ok',
         'content-type': 'application/json',
       },
       payload: { reason: '' },
