@@ -186,6 +186,95 @@ export class UserRepository {
     };
   }
 
+  static async updateProfile(
+    userId: string,
+    patch: {
+      city?: string | undefined;
+      quartier?: string | undefined;
+      bio?: string | undefined;
+      profileData?: Record<string, unknown> | undefined;
+    },
+  ): Promise<void> {
+    const updates: Record<string, unknown> = {};
+    if (patch.city !== undefined) updates['city'] = patch.city;
+    if (patch.quartier !== undefined) updates['quartier'] = patch.quartier;
+
+    if (patch.bio !== undefined || patch.profileData !== undefined) {
+      const current = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { profileData: true },
+      });
+      const existing = (current?.profileData ?? {}) as Record<string, unknown>;
+      const merged: Record<string, unknown> = { ...existing, ...(patch.profileData ?? {}) };
+      if (patch.bio !== undefined) merged['bio'] = patch.bio;
+      updates['profileData'] = merged;
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: updates as Prisma.UserUpdateInput,
+    });
+  }
+
+  static async exportAll(userId: string) {
+    return prisma.user.findFirst({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        profileType: true,
+        verificationStatus: true,
+        city: true,
+        quartier: true,
+        cp: true,
+        profileData: true,
+        points: true,
+        level: true,
+        badges: true,
+        ambassadorLabel: true,
+        weeklyRank: true,
+        plan: true,
+        periodEnd: true,
+        consentRgpd: true,
+        consentRgpdDate: true,
+        consentMarketing: true,
+        consentAnalytics: true,
+        isActive: true,
+        deletedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        kycDocuments: {
+          select: { id: true, type: true, uploadedAt: true },
+        },
+        tribeMembers: {
+          select: { tribeId: true, joinedAt: true },
+        },
+        posts: {
+          where: { deletedAt: null },
+          select: { id: true, content: true, type: true, city: true, createdAt: true },
+        },
+      },
+    });
+  }
+
+  static async anonymize(userId: string): Promise<void> {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        email: `deleted-${userId}@anonymized.yunicity.fr`,
+        phone: null,
+        passwordHash: '',
+        profileData: {},
+        deletedAt: new Date(),
+        isActive: false,
+        mfaEnabled: false,
+        mfaSecret: null,
+        lastLoginIp: null,
+      },
+    });
+  }
+
   // Requete geospatiale — acteurs proches via PostGIS
   static async findNearby(params: {
     lat: number;

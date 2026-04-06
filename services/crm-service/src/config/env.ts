@@ -26,6 +26,10 @@ const schema = z.object({
 
   // Admin
   ADMIN_API_KEY: z.string().min(32, 'ADMIN_API_KEY requis'),
+
+  // Email — Resend (optionnel en dev/test)
+  RESEND_API_KEY: z.string().optional(),
+  CONTACT_NOTIFY_EMAIL: z.string().email().default('contact@yunicity.fr'),
 });
 
 const parsed = schema.safeParse(process.env);

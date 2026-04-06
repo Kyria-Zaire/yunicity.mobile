@@ -32,3 +32,10 @@ export const patchUserOnboardingSchema = z.object({
   quartier: z.string().min(1).max(100),
   interests: z.array(z.string().min(1).max(50)).max(5),
 });
+
+export const patchProfileSchema = z.object({
+  city: z.string().min(1).max(100).optional(),
+  quartier: z.string().min(1).max(100).optional(),
+  bio: z.string().max(500).optional(),
+  profileData: z.record(z.unknown()).optional(),
+});

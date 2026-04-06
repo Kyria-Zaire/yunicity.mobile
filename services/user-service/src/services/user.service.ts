@@ -1,4 +1,5 @@
 import { UserRepository } from '../repositories/user.repository.js';
+import { FollowRepository } from '../repositories/follow.repository.js';
 import { hashPassword, validatePasswordStrength } from '../auth/password.js';
 import { emailQueue } from '../jobs/queues.js';
 import type { ProfileType } from '../models/User.model.js';
@@ -132,5 +133,91 @@ export class UserService {
     const merged = { ...existing, ...patch };
     await UserRepository.updateProfileData(id, merged);
     return { ok: true, data: { id } };
+  }
+
+  static async follow(
+    followerId: string,
+    followingId: string,
+  ): Promise<ServiceResult<{ followId: string }>> {
+    if (followerId === followingId) {
+      return {
+        ok: false,
+        code: 'SELF_FOLLOW',
+        message: 'Impossible de se suivre soi-même',
+        statusCode: 400,
+      };
+    }
+    const target = await UserRepository.findById(followingId);
+    if (!target) {
+      return {
+        ok: false,
+        code: 'NOT_FOUND',
+        message: 'Utilisateur introuvable',
+        statusCode: 404,
+      };
+    }
+    const follow = await FollowRepository.upsert(followerId, followingId);
+    return { ok: true, data: { followId: follow.id } };
+  }
+
+  static async unfollow(
+    followerId: string,
+    followingId: string,
+  ): Promise<ServiceResult<{ removed: boolean }>> {
+    const count = await FollowRepository.delete(followerId, followingId);
+    return { ok: true, data: { removed: count > 0 } };
+  }
+
+  static async updateProfile(
+    userId: string,
+    patch: {
+      city?: string | undefined;
+      quartier?: string | undefined;
+      bio?: string | undefined;
+      profileData?: Record<string, unknown> | undefined;
+    },
+  ): Promise<ServiceResult<{ id: string }>> {
+    const user = await UserRepository.findById(userId);
+    if (!user) {
+      return {
+        ok: false,
+        code: 'NOT_FOUND',
+        message: 'Utilisateur introuvable',
+        statusCode: 404,
+      };
+    }
+    await UserRepository.updateProfile(userId, patch);
+    return { ok: true, data: { id: userId } };
+  }
+
+  static async exportRgpd(
+    userId: string,
+  ): Promise<ServiceResult<Record<string, unknown>>> {
+    const data = await UserRepository.exportAll(userId);
+    if (!data) {
+      return {
+        ok: false,
+        code: 'NOT_FOUND',
+        message: 'Utilisateur introuvable',
+        statusCode: 404,
+      };
+    }
+    return { ok: true, data: data as unknown as Record<string, unknown> };
+  }
+
+  static async softDeleteMe(
+    userId: string,
+  ): Promise<ServiceResult<{ deleted: boolean }>> {
+    const user = await UserRepository.findById(userId);
+    if (!user) {
+      return {
+        ok: false,
+        code: 'NOT_FOUND',
+        message: 'Utilisateur introuvable',
+        statusCode: 404,
+      };
+    }
+    await UserRepository.anonymize(userId);
+    return { ok: true, data: { deleted: true } };
   }
 }

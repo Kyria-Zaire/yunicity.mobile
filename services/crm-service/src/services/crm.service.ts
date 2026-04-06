@@ -1,5 +1,7 @@
 import { PartnerRepository, type PartnerStatus } from '../repositories/partner.repository.js';
 import { onboardingQueue } from '../jobs/queues.js';
+import { env } from '../config/env.js';
+import { Resend } from 'resend';
 
 type Result<T> =
   | { ok: true; data: T }
@@ -13,6 +15,19 @@ interface CreatePartnerPayload {
   contactPhone?: string | undefined;
   tier?: string | undefined;
   source?: 'inscription' | 'referral' | 'cold_outreach' | 'event' | undefined;
+}
+
+function getResend(): Resend | null {
+  if (!env.RESEND_API_KEY) return null;
+  return new Resend(env.RESEND_API_KEY);
+}
+
+export interface ContactPayload {
+  name: string;
+  email: string;
+  phone?: string | undefined;
+  subject?: string | undefined;
+  message: string;
 }
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -105,5 +120,55 @@ export class CrmService {
 
   static async getStats() {
     return PartnerRepository.getStats();
+  }
+
+  static async createContact(
+    payload: ContactPayload,
+  ): Promise<Result<{ leadId: string; emailSent: boolean }>> {
+    // Upsert lead — un contact = un partenaire potentiel
+    const existing = await PartnerRepository.findByEmail(payload.email);
+    let leadId: string;
+
+    if (existing) {
+      leadId = existing.id;
+    } else {
+      const partner = await PartnerRepository.create({
+        email: payload.email.toLowerCase(),
+        businessName: payload.name,
+        contactName: payload.name,
+        city: 'reims',
+        profileType: 'yunicitizen',
+        status: 'lead',
+        tier: 'standard',
+      });
+      leadId = partner.id;
+    }
+
+    // Notification email via Resend (best-effort)
+    let emailSent = false;
+    const resend = getResend();
+    if (resend) {
+      const subject = payload.subject ?? `Nouveau contact — ${payload.name}`;
+      const body = [
+        `Nom : ${payload.name}`,
+        `Email : ${payload.email}`,
+        payload.phone ? `Téléphone : ${payload.phone}` : null,
+        ``,
+        `Message :`,
+        payload.message,
+      ]
+        .filter(Boolean)
+        .join('\n');
+
+      const { error } = await resend.emails.send({
+        from: 'noreply@yunicity.fr',
+        to: env.CONTACT_NOTIFY_EMAIL,
+        subject,
+        text: body,
+      });
+      emailSent = !error;
+    }
+
+    return { ok: true, data: { leadId, emailSent } };
   }
 }

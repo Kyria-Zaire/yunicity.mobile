@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import {
   createUserSchema,
   patchUserOnboardingSchema,
+  patchProfileSchema,
 } from '../schemas/user.schema.js';
 import { UserService } from '../services/user.service.js';
 import { UserRepository } from '../repositories/user.repository.js';
@@ -182,6 +183,80 @@ export async function userRoutes(app: FastifyInstance): Promise<void> {
       });
     },
   );
+
+  // POST /users/:id/follow — Suivre un acteur
+  app.post<{ Params: { id: string } }>('/users/:id/follow', async (req, reply) => {
+    const followerId = req.headers['x-user-id'] as string | undefined;
+    if (!followerId) return reply.status(401).send({ code: 'UNAUTHORIZED' });
+
+    const result = await UserService.follow(followerId, req.params.id);
+    if (!result.ok) {
+      return reply.status(result.statusCode).send({ code: result.code, message: result.message });
+    }
+    return reply.status(201).send(result.data);
+  });
+
+  // DELETE /users/:id/follow — Se désabonner
+  app.delete<{ Params: { id: string } }>('/users/:id/follow', async (req, reply) => {
+    const followerId = req.headers['x-user-id'] as string | undefined;
+    if (!followerId) return reply.status(401).send({ code: 'UNAUTHORIZED' });
+
+    const result = await UserService.unfollow(followerId, req.params.id);
+    if (!result.ok) {
+      return reply.status(result.statusCode).send({ code: result.code, message: result.message });
+    }
+    return reply.send(result.data);
+  });
+
+  // PATCH /users/me — Mise à jour du profil (city, quartier, bio, profileData)
+  app.patch('/users/me', async (req, reply) => {
+    const userId = req.headers['x-user-id'] as string | undefined;
+    if (!userId) return reply.status(401).send({ code: 'UNAUTHORIZED' });
+
+    const parsed = patchProfileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ code: 'VALIDATION_ERROR', errors: parsed.error.flatten() });
+    }
+
+    const result = await UserService.updateProfile(userId, parsed.data);
+    if (!result.ok) {
+      return reply.status(result.statusCode).send({ code: result.code, message: result.message });
+    }
+    return reply.send({ ok: true, ...result.data });
+  });
+
+  // GET /users/me/export — Export RGPD (JSON download)
+  app.get('/users/me/export', async (req, reply) => {
+    const userId = req.headers['x-user-id'] as string | undefined;
+    if (!userId) return reply.status(401).send({ code: 'UNAUTHORIZED' });
+
+    const result = await UserService.exportRgpd(userId);
+    if (!result.ok) {
+      return reply.status(result.statusCode).send({ code: result.code, message: result.message });
+    }
+
+    req.log.info({ userId }, '[AUDIT] RGPD export requested');
+    void reply.header(
+      'Content-Disposition',
+      `attachment; filename="yunicity-export-${userId}.json"`,
+    );
+    void reply.header('Content-Type', 'application/json');
+    return reply.send(result.data);
+  });
+
+  // DELETE /users/me — Soft delete + anonymisation
+  app.delete('/users/me', async (req, reply) => {
+    const userId = req.headers['x-user-id'] as string | undefined;
+    if (!userId) return reply.status(401).send({ code: 'UNAUTHORIZED' });
+
+    const result = await UserService.softDeleteMe(userId);
+    if (!result.ok) {
+      return reply.status(result.statusCode).send({ code: result.code, message: result.message });
+    }
+
+    req.log.warn({ userId }, '[AUDIT] Account soft-deleted and anonymized');
+    return reply.send(result.data);
+  });
 
   // POST /users/:id/verify-phone — Vérification OTP SMS
   app.post<{ Params: { id: string } }>(

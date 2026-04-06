@@ -10,9 +10,10 @@ export default defineConfig({
     poolOptions: { forks: { singleFork: true } },
     env: {
       NODE_ENV: 'test',
-      AUTH_SECRET: 'test_secret_min_32_chars_yunicity_ok',
-      DATABASE_URL: 'postgresql://yunicity:changeme_local@localhost:5432/yunicity_test',
+      DATABASE_URL: 'postgresql://test:test@localhost:5432/yunicity_test',
       REDIS_URL: 'redis://localhost:6379',
+      AUTH_SECRET: 'test_secret_min_32_chars_yunicity_ok',
+      ADMIN_API_KEY: 'test_admin_key_min_32_chars_yunicity_ok',
     },
   },
 });

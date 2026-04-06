@@ -1,7 +1,8 @@
-process.env['NODE_ENV'] = 'test';
-process.env['AUTH_SECRET'] = 'test_secret_min_32_chars_yunicity_ok';
-process.env['DATABASE_URL'] = 'postgresql://yunicity:changeme_local@localhost:5432/yunicity_test';
-process.env['REDIS_URL'] = 'redis://localhost:6379';
+process.env['NODE_ENV']      = 'test';
+process.env['DATABASE_URL']  = 'postgresql://test:test@localhost:5432/yunicity_test';
+process.env['REDIS_URL']     = 'redis://localhost:6379';
+process.env['AUTH_SECRET']   = 'test_secret_min_32_chars_yunicity_ok';
+process.env['ADMIN_API_KEY'] = 'test_admin_key_min_32_chars_yunicity_ok';
 
 import { describe, it, expect, vi } from 'vitest';
 import { CrmService } from '../services/crm.service.js';

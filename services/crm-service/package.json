@@ -23,6 +23,7 @@
     "bullmq": "catalog:",
     "zod": "catalog:",
     "dotenv": "catalog:",
+    "resend": "catalog:",
     "@yunicity/types": "workspace:*",
     "@yunicity/validators": "workspace:*",
     "@yunicity/config": "workspace:*"

@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { CrmService } from '../services/crm.service.js';
 import type { PartnerStatus } from '../models/Partner.model.js';
+import type { ContactPayload } from '../services/crm.service.js';
 
 const createPartnerSchema = z
   .object({
@@ -46,6 +47,17 @@ const updateStatusSchema = z.object({
   ]),
 });
 
+const contactSchema = z.object({
+  name: z.string().min(1).max(150),
+  email: z.string().email().max(255),
+  phone: z
+    .string()
+    .regex(/^\+[1-9]\d{7,14}$/, 'Format E.164 requis')
+    .optional(),
+  subject: z.string().min(1).max(200).optional(),
+  message: z.string().min(10).max(2000),
+});
+
 const pipelineQuerySchema = z.object({
   status: z
     .enum(['lead', 'contacted', 'negotiating', 'active', 'paused', 'churned'])
@@ -54,6 +66,23 @@ const pipelineQuerySchema = z.object({
 });
 
 export async function crmRoutes(app: FastifyInstance): Promise<void> {
+  // POST /crm/contact — Message direct → lead + notification email
+  app.post('/crm/contact', async (req, reply) => {
+    const body = contactSchema.safeParse(req.body);
+    if (!body.success) {
+      return reply.status(400).send({ errors: body.error.flatten() });
+    }
+
+    const result = await CrmService.createContact(body.data as ContactPayload);
+    if (!result.ok) {
+      return reply
+        .status(result.statusCode)
+        .send({ code: result.code, message: result.message });
+    }
+
+    return reply.status(201).send(result.data);
+  });
+
   // POST /crm/partners — Creer un partenaire
   app.post('/crm/partners', async (req, reply) => {
     const body = createPartnerSchema.safeParse(req.body);
