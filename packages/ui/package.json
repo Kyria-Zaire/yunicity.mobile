@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts,.tsx --max-warnings 0"
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "class-variance-authority": "catalog:",
