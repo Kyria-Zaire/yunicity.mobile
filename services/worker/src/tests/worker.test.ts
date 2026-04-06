@@ -2,7 +2,6 @@ process.env['NODE_ENV'] = 'test';
 process.env['REDIS_URL'] = 'redis://localhost:6379';
 process.env['USER_SERVICE_URL'] = 'http://localhost:3002';
 process.env['NOTIFICATION_SERVICE_URL'] = 'http://localhost:3006';
-process.env['ADMIN_API_KEY'] = 'test_admin_key_yunicity';
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { resetWeeklyLeaderboard } from '../crons/weekly-leaderboard.js';

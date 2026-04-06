@@ -92,6 +92,9 @@ jobs:
       DATABASE_URL: postgresql://yunicity:changeme_ci@localhost:5432/yunicity_test
       REDIS_URL: redis://localhost:6379
       AUTH_SECRET: test_secret_min_32_chars_yunicity_ci
+      ADMIN_API_KEY: test_admin_key_min_32_chars_yunicity_ok
+      USER_SERVICE_URL: http://localhost:3002
+      NOTIFICATION_SERVICE_URL: http://localhost:3006
     steps:
       - uses: actions/checkout@v4
 

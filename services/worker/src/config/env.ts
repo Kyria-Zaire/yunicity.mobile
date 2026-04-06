@@ -17,8 +17,6 @@ const schema = z.object({
     .url()
     .default('http://notification-service:3006'),
 
-  // Admin key for internal calls
-  ADMIN_API_KEY: z.string().min(32, 'ADMIN_API_KEY requis'),
 });
 
 const parsed = schema.safeParse(process.env);
