@@ -71,3 +71,7 @@ pnpm-debug.log*
 .cache/
 tmp/
 temp/
+
+# Claude Code (config locale, ne pas versionner)
+.claude/
+.claude/worktrees/

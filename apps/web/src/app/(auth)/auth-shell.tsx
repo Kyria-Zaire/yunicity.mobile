@@ -21,7 +21,8 @@ const ACTIVITY_CARDS = [
 
 export function AuthShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isVerification = pathname?.includes('verification-pending');
+  const isVerification =
+    pathname?.includes('verification-pending') || pathname?.includes('verify-email');
 
   if (isVerification) {
     return (
@@ -32,9 +33,9 @@ export function AuthShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-[58%_42%] bg-[#0D0F2E] lg:bg-white">
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-[#0D0F2E] lg:bg-white">
       {/* Gauche desktop — fond uni #0D0F2E (identique landing footer) */}
-      <aside className="hidden lg:flex lg:w-[58%] bg-[#0D0F2E] flex-col justify-between p-10 xl:p-14 shrink-0">
+      <aside className="hidden lg:flex bg-[#0D0F2E] flex-col justify-between p-10 xl:p-14 shrink-0">
         <div>
           <span className="font-display text-4xl font-black text-[#2A2FFF]">
             Yunicity

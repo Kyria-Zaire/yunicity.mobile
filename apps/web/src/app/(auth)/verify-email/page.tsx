@@ -1,18 +1,9 @@
 'use client';
 
-import { Suspense, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { API_URL } from '@/lib/config';
 
 export default function VerifyEmailPage() {
-  return (
-    <Suspense fallback={<div className="text-center py-12 text-[#6B7280]">Chargement...</div>}>
-      <VerifyEmailContent />
-    </Suspense>
-  );
-}
-
-function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const userId = searchParams?.get('userId') ?? '';
@@ -66,11 +57,14 @@ function VerifyEmailContent() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_URL}/users/${userId}/verify-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: fullCode }),
-      });
+      const res = await fetch(
+        `${process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3000'}/users/${userId}/verify-email`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: fullCode }),
+        },
+      );
 
       const data = (await res.json()) as {
         verified?: boolean;
@@ -143,7 +137,11 @@ function VerifyEmailContent() {
             className={`w-12 h-14 text-center text-2xl font-bold rounded-xl border-2
               text-[#0D0F2E] bg-white
               transition-all duration-200
-              ${digit ? 'border-[#2A2FFF] bg-[#E8E9FF]' : 'border-[#D1D5DB] focus:border-[#2A2FFF]'}
+              ${
+                digit
+                  ? 'border-[#2A2FFF] bg-[#E8E9FF]'
+                  : 'border-[#D1D5DB] focus:border-[#2A2FFF]'
+              }
               focus:outline-none focus:shadow-[0_0_0_4px_rgba(42,47,255,0.08)]`}
           />
         ))}

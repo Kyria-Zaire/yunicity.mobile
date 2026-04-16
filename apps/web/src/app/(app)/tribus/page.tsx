@@ -2,14 +2,15 @@
 
 import { useMemo, useState } from 'react';
 import { TribeCard, type Tribe } from '@/components/tribes/tribe-card';
+import { CreateTribeModal } from '@/components/tribes/create-tribe-modal';
 
 const MOCK_TRIBES: Tribe[] = [
-  { id: '1', name: 'Cyclistes de Reims', category: 'sport', membersCount: 23, isVerified: true, description: 'Passionnés de vélo, balades et véloroutes autour de Reims.' },
-  { id: '2', name: 'Jazz au Parvis', category: 'culture', membersCount: 47, isVerified: true, description: 'Amateurs de jazz, concerts et improvisation à Reims.' },
-  { id: '3', name: 'Entrepreneurs Reims', category: 'business', membersCount: 31, isVerified: false, description: "Réseau d'entrepreneurs locaux qui se retrouvent chaque mois." },
+  { id: '1', name: 'Cyclistes de Reims', category: 'sport', membersCount: 23, isVerified: true, description: 'Passionnes de velo, balades et veloroutes autour de Reims.' },
+  { id: '2', name: 'Jazz au Parvis', category: 'culture', membersCount: 47, isVerified: true, description: 'Amateurs de jazz, concerts et improvisation a Reims.' },
+  { id: '3', name: 'Entrepreneurs Reims', category: 'business', membersCount: 31, isVerified: false, description: "Reseau d'entrepreneurs locaux qui se retrouvent chaque mois." },
   { id: '4', name: 'Potagers Urbains', category: 'ecology', membersCount: 18, isVerified: false, description: 'Jardinage urbain, permaculture et compostage collectif.' },
   { id: '5', name: 'Parents Croix-Rouge', category: 'social', membersCount: 62, isVerified: true, description: 'Entraide et partage entre parents du quartier Croix-Rouge.' },
-  { id: '6', name: 'Dev Reims', category: 'tech', membersCount: 29, isVerified: false, description: 'Développeurs, designers et makers de la région rémoise.' },
+  { id: '6', name: 'Dev Reims', category: 'tech', membersCount: 29, isVerified: false, description: 'Developpeurs, designers et makers de la region remoise.' },
 ];
 
 const TABS = [
@@ -18,7 +19,7 @@ const TABS = [
   { key: 'sport', label: 'Sport' },
   { key: 'business', label: 'Business' },
   { key: 'social', label: 'Social' },
-  { key: 'ecology', label: 'Écologie' },
+  { key: 'ecology', label: 'Ecologie' },
   { key: 'tech', label: 'Tech' },
 ] as const;
 
@@ -26,6 +27,7 @@ type TabKey = (typeof TABS)[number]['key'];
 
 export default function TribusPage() {
   const [tab, setTab] = useState<TabKey>('all');
+  const [showCreate, setShowCreate] = useState(false);
 
   const items = useMemo(() => {
     if (tab === 'all') return MOCK_TRIBES;
@@ -40,15 +42,16 @@ export default function TribusPage() {
             Les tribus de Reims
           </h1>
           <p className="font-body text-[#6B7280] mt-3 text-base">
-            Rejoins une communauté qui te ressemble.
+            Rejoins une communaute qui te ressemble.
           </p>
         </div>
 
         <button
           type="button"
+          onClick={() => setShowCreate(true)}
           className="h-11 px-6 rounded-xl bg-[#2A2FFF] text-white font-display font-semibold shadow-primary hover:bg-[#1A1ECC] transition-colors w-full sm:w-auto"
         >
-          Créer une tribu
+          Creer une tribu
         </button>
       </div>
 
@@ -76,7 +79,8 @@ export default function TribusPage() {
           <TribeCard key={tribe.id} tribe={tribe} />
         ))}
       </section>
+
+      {showCreate && <CreateTribeModal onClose={() => setShowCreate(false)} />}
     </main>
   );
 }
-

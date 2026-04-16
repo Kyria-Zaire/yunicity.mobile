@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { API_URL } from '@/lib/config';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 
 export function WaitlistForm() {
   const [email, setEmail] = useState('');
@@ -12,7 +13,7 @@ export function WaitlistForm() {
     if (!email.trim()) return;
     setStatus('loading');
     try {
-      const res = await fetch(`${API_URL}/crm/partners`, {
+      const res = await fetch(`${API_BASE}/crm/partners`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -40,7 +41,10 @@ export function WaitlistForm() {
 
   return (
     <div className="w-full max-w-md mx-auto mt-10">
-      <form onSubmit={submit} className="flex flex-col sm:flex-row gap-3">
+      <form
+        onSubmit={submit}
+        className="flex flex-col sm:flex-row gap-3"
+      >
         <input
           type="email"
           required

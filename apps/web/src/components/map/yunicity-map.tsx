@@ -55,26 +55,26 @@ export function YunicityMap({ center, zoom, actors, onActorClick }: Props) {
   onActorClickRef.current = onActorClick;
 
   const createMarkerElement = useCallback((actor: MapActor): HTMLElement => {
-    const color = typeColors[actor.profileType];
+    const bg = typeColors[actor.profileType];
     const el = document.createElement('div');
     el.style.cssText = `
-      width: 40px;
-      height: 40px;
-      background: ${color};
-      border-radius: 50%;
-      border: 3px solid white;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 9px;
-      transition: box-shadow 0.15s ease;
-      user-select: none;
-      will-change: box-shadow;
+      width:            44px;
+      height:           44px;
+      border-radius:    50%;
+      background:       ${bg};
+      display:          flex;
+      align-items:      center;
+      justify-content:  center;
+      font-size:        20px;
+      cursor:           pointer;
+      border:           3px solid white;
+      box-shadow:       0 4px 12px rgba(0,0,0,0.25);
+      transition:       box-shadow 0.15s ease;
+      user-select:      none;
+      will-change:      box-shadow;
       transform-origin: center center;
-      position: relative;
-      z-index: 1;
+      position:         relative;
+      z-index:          1;
     `;
     el.innerHTML = iconSvg[actor.profileType];
     el.title = actor.displayName;
@@ -86,6 +86,7 @@ export function YunicityMap({ center, zoom, actors, onActorClick }: Props) {
       el.style.zIndex = '10';
       el.style.border = '3px solid rgba(255,255,255,0.9)';
     });
+
     el.addEventListener('mouseleave', () => {
       el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.25)';
       el.style.zIndex = '1';
@@ -94,7 +95,7 @@ export function YunicityMap({ center, zoom, actors, onActorClick }: Props) {
 
     el.addEventListener('click', (e) => {
       e.stopPropagation();
-      onActorClickRef.current(actor);
+      onActorClickRef.current?.(actor);
     });
 
     return el;

@@ -4,12 +4,13 @@ import { OnboardingGate } from '@/components/onboarding-gate';
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <OnboardingGate>
-      <div className="min-h-screen bg-white">
-        <AppNavbar />
-        {children}
-      </div>
-    </OnboardingGate>
+    <div className="flex flex-col min-h-dvh">
+      <AppNavbar />
+      <main className="flex-1">
+        <OnboardingGate>
+          {children}
+        </OnboardingGate>
+      </main>
+    </div>
   );
 }
-

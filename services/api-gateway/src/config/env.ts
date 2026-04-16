@@ -25,7 +25,7 @@ const envSchema = z.object({
   AI_SERVICE_URL: z.string().url().default('http://ai-service:3009'),
 
   // Infrastructure
-  REDIS_URL: z.string().min(10, 'REDIS_URL requis'),
+  REDIS_URL: z.string().default('redis://:changeme_local@redis:6379'),
 
   // CORS — origines autorisées (séparées par virgule)
   // Inclut le front web Next en dev (3010) + autres clients

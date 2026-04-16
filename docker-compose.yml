@@ -243,11 +243,11 @@ services:
   postgres:
     image: postgis/postgis:16-3.4-alpine
     ports:
-      - "127.0.0.1:5432:5432"
+      - "5432:5432"
     environment:
       POSTGRES_DB: yunicity
       POSTGRES_USER: yunicity
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_local}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -261,13 +261,13 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD requis} --appendonly yes --loglevel warning
+    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme_local} --appendonly yes --loglevel warning
     volumes:
       - redis_data:/data
     networks:
       - internal
     healthcheck:
-      test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD:?REDIS_PASSWORD requis}", "ping"]
+      test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD:-changeme_local}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5

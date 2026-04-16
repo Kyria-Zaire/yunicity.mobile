@@ -218,3 +218,8 @@
 .animate-float-3 {
   animation: float 6s ease-in-out 1s infinite;
 }
+
+/* Form input field — shared across settings */
+.input-field {
+  @apply w-full h-10 px-3 rounded-xl border border-[#E5E7EB] bg-white font-body text-sm text-[#0D0F2E] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#2A2FFF] focus:border-transparent transition-colors;
+}

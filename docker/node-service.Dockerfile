@@ -13,6 +13,7 @@ COPY packages ./packages
 COPY services ./services
 
 RUN pnpm install --frozen-lockfile
+RUN pnpm --filter "@yunicity/database" generate
 RUN pnpm --filter "@yunicity/types" --filter "@yunicity/validators" --filter "@yunicity/config" run build
 
 WORKDIR /app/services/${SERVICE_DIR}
@@ -35,6 +36,7 @@ COPY apps ./apps
 COPY packages ./packages
 COPY services ./services
 RUN pnpm install --frozen-lockfile
+RUN pnpm --filter "@yunicity/database" generate
 RUN pnpm --filter "@yunicity/types" --filter "@yunicity/validators" --filter "@yunicity/config" run build
 RUN pnpm --filter "${PNPM_FILTER}" run build
 
