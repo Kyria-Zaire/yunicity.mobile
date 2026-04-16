@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authBaseUrl, requireStaffSession } from '@/lib/staff-session';
 
-const API_URL = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:3000';
 const ADMIN_KEY = process.env['ADMIN_API_KEY'] ?? '';
 
 export async function GET(
@@ -28,6 +28,9 @@ async function proxyToApi(
   request: NextRequest,
   { path }: { path: string[] },
 ): Promise<NextResponse> {
+  const authError = await requireStaffSession(request);
+  if (authError) return authError;
+
   if (!ADMIN_KEY) {
     return NextResponse.json(
       { code: 'CONFIG_ERROR', message: 'ADMIN_API_KEY not configured' },
@@ -35,8 +38,9 @@ async function proxyToApi(
     );
   }
 
+  const apiUrl = authBaseUrl();
   const targetPath = `/users/admin/${path.join('/')}`;
-  const url = new URL(targetPath, API_URL);
+  const url = new URL(targetPath, apiUrl);
   request.nextUrl.searchParams.forEach((value, key) => {
     url.searchParams.set(key, value);
   });

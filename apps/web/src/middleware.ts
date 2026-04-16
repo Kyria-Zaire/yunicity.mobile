@@ -4,6 +4,7 @@ const PUBLIC_PATHS = [
   '/',
   '/login',
   '/register',
+  '/verify-email',
   '/verification-pending',
   '/privacy',
 ];

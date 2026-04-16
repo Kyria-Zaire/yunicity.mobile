@@ -12,8 +12,7 @@ export default function ProfilPublicPage() {
   const profile = useMemo(() => MOCK_PROFILES[profileId] ?? MOCK_PROFILES['1']!, [profileId]);
   const { userId } = useCurrentUser();
 
-  const isAccountOwner =
-    userId != null && (userId === profile.id || (userId === 'me' && profile.id === '1'));
+  const isAccountOwner = userId != null && userId === profile.id;
 
   return <ProfilePageContent profile={profile} isAccountOwner={isAccountOwner} />;
 }

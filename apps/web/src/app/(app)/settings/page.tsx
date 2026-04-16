@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Suspense, useMemo } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { useCurrentUser } from '@/hooks/use-current-user';
 import { ProfileTab } from '@/components/settings/profile-tab';
 import { SecurityTab } from '@/components/settings/security-tab';
@@ -46,6 +46,11 @@ function SettingsContent() {
   const activeTab: TabId = isValidTab(rawTab) ? rawTab : 'profile';
   const { user, loading } = useCurrentUser();
 
+  useEffect(() => {
+    if (loading || user) return;
+    router.replace('/login');
+  }, [loading, user, router]);
+
   const tabContent = useMemo(() => {
     if (!user) return null;
     switch (activeTab) {
@@ -69,7 +74,7 @@ function SettingsContent() {
   if (!user) {
     return (
       <main className="min-h-[calc(100dvh-64px)] bg-[#F9FAFB] flex items-center justify-center">
-        <p className="font-body text-[#6B7280]">Impossible de charger les paramètres.</p>
+        <div className="w-8 h-8 border-2 border-[#2A2FFF] border-t-transparent rounded-full animate-spin" />
       </main>
     );
   }

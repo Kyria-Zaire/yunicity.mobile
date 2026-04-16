@@ -333,7 +333,7 @@ export function currentUserToMockProfile(user: CurrentUser): MockProfile {
   const base = refByType[user.profileType] ?? MOCK_PROFILES['1']!;
   return {
     ...base,
-    id: user.id === 'me' ? '1' : user.id,
+    id: user.id,
     displayName: user.displayName,
     profileType: user.profileType,
     verificationStatus: user.verificationStatus,
