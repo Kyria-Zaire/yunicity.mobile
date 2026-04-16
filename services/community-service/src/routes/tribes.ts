@@ -23,6 +23,21 @@ const createTribeSchema = z.object({
   tags: z.array(z.string().max(30)).max(5).optional(),
 });
 
+function requireAuthenticatedUser(
+  req: { headers: Record<string, string | string[] | undefined> },
+  reply: { status: (n: number) => { send: (b: unknown) => void } },
+): string | undefined {
+  const userId = req.headers['x-user-id'] as string | undefined;
+  if (!userId) {
+    reply.status(401).send({
+      code: 'UNAUTHORIZED',
+      message: 'Authentication required',
+    });
+    return undefined;
+  }
+  return userId;
+}
+
 export async function tribeRoutes(app: FastifyInstance): Promise<void> {
   // GET /tribes?city=reims&category=sport&limit=20&cursor=xxx
   app.get('/tribes', async (req, reply) => {
@@ -46,6 +61,9 @@ export async function tribeRoutes(app: FastifyInstance): Promise<void> {
 
   // POST /tribes
   app.post('/tribes', async (req, reply) => {
+    const creatorId = requireAuthenticatedUser(req, reply);
+    if (!creatorId) return;
+
     const parsed = createTribeSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.status(400).send({
@@ -53,8 +71,6 @@ export async function tribeRoutes(app: FastifyInstance): Promise<void> {
         errors: parsed.error.flatten(),
       });
     }
-
-    const creatorId = (req.headers['x-user-id'] as string) ?? 'anonymous';
 
     const result = await TribeService.create({
       ...parsed.data,
@@ -74,7 +90,9 @@ export async function tribeRoutes(app: FastifyInstance): Promise<void> {
   app.post<{ Params: { id: string } }>(
     '/tribes/:id/join',
     async (req, reply) => {
-      const userId = (req.headers['x-user-id'] as string) ?? 'anonymous';
+      const userId = requireAuthenticatedUser(req, reply);
+      if (!userId) return;
+
       const result = await TribeService.join(req.params.id, userId);
       if (!result.ok) {
         return reply
@@ -89,7 +107,9 @@ export async function tribeRoutes(app: FastifyInstance): Promise<void> {
   app.post<{ Params: { id: string } }>(
     '/tribes/:id/leave',
     async (req, reply) => {
-      const userId = (req.headers['x-user-id'] as string) ?? 'anonymous';
+      const userId = requireAuthenticatedUser(req, reply);
+      if (!userId) return;
+
       const result = await TribeService.leave(req.params.id, userId);
       if (!result.ok) {
         return reply

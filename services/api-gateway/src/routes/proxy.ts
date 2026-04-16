@@ -25,6 +25,17 @@ async function resolveUserIdFromSession(
   }
 }
 
+function shouldResolveUserId(pathOnly: string): boolean {
+  return (
+    /^\/users(\/|$)/i.test(pathOnly) ||
+    /^\/api\/users(\/|$)/i.test(pathOnly) ||
+    /^\/community(\/|$)/i.test(pathOnly) ||
+    /^\/api\/community(\/|$)/i.test(pathOnly) ||
+    /^\/payment(\/|$)/i.test(pathOnly) ||
+    /^\/api\/payment(\/|$)/i.test(pathOnly)
+  );
+}
+
 // Map des services internes
 const SERVICE_MAP: Record<string, string> = {
   '/auth': env.AUTH_SERVICE_URL,
@@ -74,12 +85,9 @@ async function proxyRequest(
     }
 
     const pathOnly = targetPath.split('?')[0] ?? targetPath;
-    const isUserServicePath =
-      /^\/users(\/|$)/i.test(pathOnly) ||
-      /^\/api\/users(\/|$)/i.test(pathOnly);
 
     let userId = req.user?.id;
-    if (!userId && isUserServicePath) {
+    if (!userId && shouldResolveUserId(pathOnly)) {
       userId = await resolveUserIdFromSession(req);
     }
     if (userId) {

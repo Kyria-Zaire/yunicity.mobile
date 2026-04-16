@@ -1,4 +1,5 @@
 import { prisma, type Prisma } from '@yunicity/database';
+import { deleteFromR2 } from '../providers/r2.provider.js';
 
 // Projection safe — champs sensibles exclus par defaut
 const SAFE_SELECT = {
@@ -31,7 +32,14 @@ const SAFE_SELECT = {
   deletedAt: true,
   createdAt: true,
   updatedAt: true,
-  kycDocuments: true,
+  kycDocuments: {
+    select: {
+      id: true,
+      type: true,
+      uploadedAt: true,
+      reviewedAt: true,
+    },
+  },
 } satisfies Prisma.UserSelect;
 
 export class UserRepository {
@@ -259,20 +267,60 @@ export class UserRepository {
   }
 
   static async anonymize(userId: string): Promise<void> {
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        email: `deleted-${userId}@anonymized.yunicity.fr`,
-        phone: null,
-        passwordHash: '',
-        profileData: {},
-        deletedAt: new Date(),
-        isActive: false,
-        mfaEnabled: false,
-        mfaSecret: null,
-        lastLoginIp: null,
-      },
+    const now = new Date();
+    const kycDocuments = await prisma.kycDocument.findMany({
+      where: { userId },
+      select: { r2Key: true },
     });
+
+    await Promise.all(
+      kycDocuments.map((document) => deleteFromR2(document.r2Key)),
+    );
+
+    await prisma.$transaction([
+      prisma.post.updateMany({
+        where: { authorId: userId, deletedAt: null },
+        data: {
+          content: '[deleted by user]',
+          mediaKeys: [],
+          eventTitle: null,
+          eventDate: null,
+          eventLocation: null,
+          eventMaxAttendees: null,
+          eventAttendees: [],
+          isActive: false,
+          deletedAt: now,
+        },
+      }),
+      prisma.kycDocument.deleteMany({
+        where: { userId },
+      }),
+      prisma.session.deleteMany({
+        where: { userId },
+      }),
+      prisma.pushSubscription.deleteMany({
+        where: { userId },
+      }),
+      prisma.follow.deleteMany({
+        where: {
+          OR: [{ followerId: userId }, { followingId: userId }],
+        },
+      }),
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          email: `deleted-${userId}@anonymized.yunicity.fr`,
+          phone: null,
+          passwordHash: '',
+          profileData: {},
+          deletedAt: now,
+          isActive: false,
+          mfaEnabled: false,
+          mfaSecret: null,
+          lastLoginIp: null,
+        },
+      }),
+    ]);
   }
 
   // Requete geospatiale — acteurs proches via PostGIS

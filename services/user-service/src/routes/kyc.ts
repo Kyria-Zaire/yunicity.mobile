@@ -29,6 +29,8 @@ export async function kycRoutes(app: FastifyInstance): Promise<void> {
   app.post<{ Params: { id: string }; Querystring: { docType: string } }>(
     '/users/:id/kyc/upload',
     async (req, reply) => {
+      if (!assertKycUser(req, reply)) return;
+
       const userId = req.params.id;
       const docType = (req.query.docType ?? 'other') as KycDocType;
 

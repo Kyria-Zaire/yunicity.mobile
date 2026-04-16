@@ -12,7 +12,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
   const handler = toNodeHandler(auth);
 
   // Lockout check BEFORE Better Auth processes sign-in
-  app.addHook('onRequest', async (req, reply) => {
+  app.addHook('preValidation', async (req, reply) => {
     if (req.method !== 'POST' || !req.url.includes('/auth/sign-in/email')) return;
 
     const body = req.body as { email?: string } | undefined;

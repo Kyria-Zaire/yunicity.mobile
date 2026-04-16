@@ -38,7 +38,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Middleware
   await app.register(requestIdMiddleware);
   registerCsrfProtection(app);
-  registerAuthSensitiveRateLimit(app);
+  await registerAuthSensitiveRateLimit(app);
   registerSecurityAuditHook(app);
 
   // Routes

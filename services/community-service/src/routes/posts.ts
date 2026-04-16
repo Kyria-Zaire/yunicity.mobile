@@ -11,6 +11,21 @@ const createPostSchema = z.object({
   city: z.string().min(2).max(100),
 });
 
+function requireAuthenticatedUser(
+  req: { headers: Record<string, string | string[] | undefined> },
+  reply: { status: (n: number) => { send: (b: unknown) => void } },
+): string | undefined {
+  const userId = req.headers['x-user-id'] as string | undefined;
+  if (!userId) {
+    reply.status(401).send({
+      code: 'UNAUTHORIZED',
+      message: 'Authentication required',
+    });
+    return undefined;
+  }
+  return userId;
+}
+
 export async function postRoutes(app: FastifyInstance): Promise<void> {
   // GET /posts?city=reims&tribeId=xxx&limit=20&cursor=xxx
   app.get('/posts', async (req, reply) => {
@@ -33,6 +48,9 @@ export async function postRoutes(app: FastifyInstance): Promise<void> {
 
   // POST /posts
   app.post('/posts', async (req, reply) => {
+    const authorId = requireAuthenticatedUser(req, reply);
+    if (!authorId) return;
+
     const parsed = createPostSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.status(400).send({
@@ -41,7 +59,6 @@ export async function postRoutes(app: FastifyInstance): Promise<void> {
       });
     }
 
-    const authorId = (req.headers['x-user-id'] as string) ?? 'anonymous';
     const result = await PostService.create({
       ...parsed.data,
       city: parsed.data.city.toLowerCase(),
@@ -59,7 +76,9 @@ export async function postRoutes(app: FastifyInstance): Promise<void> {
   app.post<{ Params: { id: string } }>(
     '/posts/:id/react',
     async (req, reply) => {
-      const userId = (req.headers['x-user-id'] as string) ?? 'anonymous';
+      const userId = requireAuthenticatedUser(req, reply);
+      if (!userId) return;
+
       const emoji = (req.body as { emoji?: string }).emoji ?? '';
       const result = await PostService.react(req.params.id, userId, emoji);
       if (!result.ok) {

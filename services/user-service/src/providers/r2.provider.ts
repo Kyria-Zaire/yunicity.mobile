@@ -2,6 +2,7 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { env } from '../config/env.js';
@@ -27,6 +28,18 @@ function getClient(): S3Client | null {
     });
   }
   return _client;
+}
+
+export async function deleteFromR2(key: string): Promise<void> {
+  const client = getClient();
+  if (!client) return;
+
+  await client.send(
+    new DeleteObjectCommand({
+      Bucket: env.R2_BUCKET_NAME,
+      Key: key,
+    }),
+  );
 }
 
 export async function uploadToR2(params: {
