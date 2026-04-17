@@ -13,6 +13,12 @@ const envSchema = z.object({
   // Auth
   AUTH_SECRET: z.string().min(32, 'AUTH_SECRET must be at least 32 characters'),
 
+  // Dev-only auth helpers (NEVER enable in production)
+  ALLOW_DEV_AUTH: z
+    .string()
+    .optional()
+    .transform((v) => v === 'true'),
+
   // Services internes (Docker network)
   AUTH_SERVICE_URL: z.string().url().default('http://auth-service:3001'),
   USER_SERVICE_URL: z.string().url().default('http://user-service:3002'),

@@ -86,6 +86,19 @@ async function proxyRequest(
 
     const pathOnly = targetPath.split('?')[0] ?? targetPath;
 
+    // Dev mobile: permettre à l'app RN d'envoyer X-User-ID directement.
+    // (Expo Go ne gère pas toujours les cookies httpOnly comme le web.)
+    const clientUserId = req.headers['x-user-id'];
+    const allowDevAuth =
+      process.env['NODE_ENV'] !== 'production' && env.ALLOW_DEV_AUTH === true;
+    if (
+      allowDevAuth &&
+      typeof clientUserId === 'string' &&
+      clientUserId.trim()
+    ) {
+      headers['X-User-ID'] = clientUserId.trim();
+    }
+
     let userId = req.user?.id;
     if (!userId && shouldResolveUserId(pathOnly)) {
       userId = await resolveUserIdFromSession(req);
