@@ -5,12 +5,39 @@ import { prisma } from '@yunicity/database';
 import { env } from '../config/env.js';
 import { hashPassword, verifyPassword, validatePasswordStrength } from './password.js';
 
+function buildTrustedOrigins(): string[] {
+  const fromCsv = (s: string) =>
+    s
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean);
+  const origins = new Set<string>(fromCsv(env.CORS_ORIGINS));
+  const publicAuthBase = env.BETTER_AUTH_BASE_URL ?? env.WEB_URL;
+  origins.add(publicAuthBase);
+  origins.add(env.WEB_URL);
+  if (env.NODE_ENV !== 'production') {
+    for (const o of [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      'http://localhost:8081',
+      'http://127.0.0.1:8081',
+      'exp://localhost:8081',
+      'exp://127.0.0.1:8081',
+    ]) {
+      origins.add(o);
+    }
+  }
+  return [...origins];
+}
+
+const betterAuthBaseURL = env.BETTER_AUTH_BASE_URL ?? env.WEB_URL;
+
 export const auth = betterAuth({
   // Adaptateur PostgreSQL via Prisma
   database: prismaAdapter(prisma, { provider: 'postgresql' }),
 
-  // URL de base (pour les redirects email)
-  baseURL: env.WEB_URL,
+  // URL « publique » des endpoints auth (doit coller à ce que voit le client, ex. gateway LAN)
+  baseURL: betterAuthBaseURL,
 
   // Clé secrète — min 32 chars, validée au démarrage
   secret: env.AUTH_SECRET,
@@ -28,7 +55,7 @@ export const auth = betterAuth({
   // Email + mot de passe
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true, // BLOQUANT — email doit être vérifié
+    requireEmailVerification: false, // tests : OTP désactivé — remettre `env.NODE_ENV === 'production'` avant beta
     minPasswordLength: 12,
     maxPasswordLength: 128,
     password: {
@@ -67,8 +94,8 @@ export const auth = betterAuth({
     }),
   ],
 
-  // Origines autorisées pour les cookies
-  trustedOrigins: env.CORS_ORIGINS.split(',').map((o) => o.trim()),
+  // Origines autorisées (cookies / CSRF Better Auth)
+  trustedOrigins: buildTrustedOrigins(),
 
   // Cookie httpOnly — JAMAIS de JWT en localStorage
   advanced: {
@@ -80,6 +107,9 @@ export const auth = betterAuth({
       secure: env.NODE_ENV === 'production',
       path: '/',
     },
+    // Dev : Expo / cookies + Referer atypiques — évite INVALID_ORIGIN (voir origin-check middleware Better Auth).
+    // En prod, rester strict (disableOriginCheck absent / false).
+    ...(env.NODE_ENV !== 'production' ? { disableOriginCheck: true as const } : {}),
   },
 });
 

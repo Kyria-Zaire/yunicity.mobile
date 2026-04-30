@@ -27,6 +27,16 @@ export async function buildApp(): Promise<FastifyInstance> {
     timeWindow: '1 minute',
   });
 
+  // Multipart (media uploads)
+  const multipart = (await import('@fastify/multipart')).default;
+  // Typage Fastify parfois trop strict selon versions/plugins
+  await app.register(multipart as any, {
+    limits: {
+      fileSize: 100 * 1024 * 1024, // 100MB max (vidéo)
+      files: 4, // max 4 fichiers par post
+    },
+  });
+
   // Routes
   await app.register(tribeRoutes);
   await app.register(postRoutes);

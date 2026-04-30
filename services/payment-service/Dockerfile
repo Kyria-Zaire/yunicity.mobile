@@ -1,6 +1,6 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@10.16.1 --activate
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 RUN apk add --no-cache python3 make g++
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json tsconfig.base.json ./

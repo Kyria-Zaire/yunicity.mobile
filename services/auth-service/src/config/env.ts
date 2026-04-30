@@ -23,10 +23,12 @@ const schema = z.object({
     .string()
     .min(32, 'AUTH_SECRET doit faire au moins 32 caractères'),
 
-  // CORS (origines autorisées, séparées par virgule)
+  // CORS + Better Auth trustedOrigins (séparées par virgule). Ajouter http(s)://<IP>:3000 en test LAN / Expo.
   CORS_ORIGINS: z
     .string()
-    .default('http://localhost:3000,http://localhost:3010'),
+    .default(
+      'http://localhost:3000,http://localhost:3010,http://localhost:8081,exp://localhost:8081',
+    ),
 
   // Twilio (OTP SMS) — optionnel en dev
   TWILIO_ACCOUNT_SID: z.string().optional(),
@@ -39,6 +41,12 @@ const schema = z.object({
 
   // App URLs
   WEB_URL: z.string().url().default('http://localhost:3010'),
+
+  /**
+   * URL publique où les clients appellent Better Auth (souvent l’api-gateway en dev LAN),
+   * ex. http://192.168.1.55:3000. Si absent, on retombe sur WEB_URL (OK pour le web local).
+   */
+  BETTER_AUTH_BASE_URL: z.string().url().optional(),
 
   /** CSV — noms autorisés pour X-Internal-Service sur /internal/* */
   INTERNAL_SERVICE_NAMES: z.string().optional(),

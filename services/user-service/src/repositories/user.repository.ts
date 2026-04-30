@@ -5,6 +5,8 @@ import { deleteFromR2 } from '../providers/r2.provider.js';
 const SAFE_SELECT = {
   id: true,
   email: true,
+  name: true,
+  image: true,
   phone: true,
   profileType: true,
   verificationStatus: true,
@@ -194,6 +196,34 @@ export class UserRepository {
     };
   }
 
+  static async applyPostSignupProfile(
+    userId: string,
+    patch: {
+      profileType: 'yunicitizen' | 'commercial' | 'association' | 'freelance' | 'ecole';
+      profileData?: Record<string, unknown> | undefined;
+      consent: { rgpd: boolean; marketing: boolean; analytics: boolean };
+    },
+  ): Promise<void> {
+    const current = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { profileData: true },
+    });
+    const existing = (current?.profileData ?? {}) as Record<string, unknown>;
+    const merged = { ...existing, ...(patch.profileData ?? {}) };
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        profileType: patch.profileType,
+        profileData: merged as Prisma.InputJsonValue,
+        consentRgpd: patch.consent.rgpd,
+        consentRgpdDate: new Date(),
+        consentMarketing: patch.consent.marketing,
+        consentAnalytics: patch.consent.analytics,
+      },
+    });
+  }
+
   static async updateProfile(
     userId: string,
     patch: {
@@ -311,11 +341,11 @@ export class UserRepository {
         data: {
           email: `deleted-${userId}@anonymized.yunicity.fr`,
           phone: null,
-          passwordHash: '',
+          passwordHash: null,
           profileData: {},
           deletedAt: now,
           isActive: false,
-          mfaEnabled: false,
+          twoFactorEnabled: false,
           mfaSecret: null,
           lastLoginIp: null,
         },

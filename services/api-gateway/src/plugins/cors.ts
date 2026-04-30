@@ -21,7 +21,15 @@ export default fp(async (app: FastifyInstance) => {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Cookie',
+      'X-Request-ID',
+      'x-user-id',
+      'x-admin-key',
+      'x-internal-service',
+    ],
     exposedHeaders: ['X-Request-ID', 'X-Rate-Limit-Remaining'],
     maxAge: 86_400,
   });

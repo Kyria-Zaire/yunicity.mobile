@@ -1,6 +1,14 @@
 import type { FastifyInstance } from 'fastify';
 
 export async function healthRoutes(app: FastifyInstance): Promise<void> {
+  app.get('/', async (_req, reply) => {
+    return reply.send({
+      service: 'api-gateway',
+      hint: 'Aucune page ici : utilise /health ou les routes proxy (/auth/*, /users/*, …).',
+      health: '/health',
+    });
+  });
+
   app.get(
     '/health',
     {

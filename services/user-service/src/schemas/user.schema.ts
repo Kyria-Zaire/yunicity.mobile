@@ -33,6 +33,19 @@ export const patchUserOnboardingSchema = z.object({
   interests: z.array(z.string().min(1).max(50)).max(5),
 });
 
+/** Après sign-up Better Auth : compléter profil étendu (mobile / clients sans cookie). */
+export const patchUserPostSignupSchema = z.object({
+  profileType: profileTypeSchema,
+  profileData: z.record(z.unknown()).optional(),
+  consent: z.object({
+    rgpd: z.literal(true, {
+      errorMap: () => ({ message: 'RGPD requis' }),
+    }),
+    marketing: z.boolean().default(false),
+    analytics: z.boolean().default(false),
+  }),
+});
+
 export const patchProfileSchema = z.object({
   city: z.string().min(1).max(100).optional(),
   quartier: z.string().min(1).max(100).optional(),

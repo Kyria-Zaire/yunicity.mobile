@@ -17,6 +17,12 @@ const schema = z.object({
   CORS_ORIGINS: z
     .string()
     .default('http://localhost:3000,http://localhost:3010'),
+
+  // Cloudflare R2 (media posts) — optionnel en dev
+  R2_ACCOUNT_ID: z.string().optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_BUCKET_NAME: z.string().default('yunicity-media'),
 });
 
 const parsed = schema.safeParse(process.env);

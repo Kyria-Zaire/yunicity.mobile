@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import {
   createUserSchema,
   patchUserOnboardingSchema,
+  patchUserPostSignupSchema,
   patchProfileSchema,
 } from '../schemas/user.schema.js';
 import { UserService } from '../services/user.service.js';
@@ -10,6 +11,7 @@ import { GamificationService } from '../services/gamification.service.js';
 import { env } from '../config/env.js';
 
 import { checkOTPRateLimit } from '../utils/otp-rate-limit.js';
+import { emailQueue } from '../jobs/queues.js';
 function requireUserAccess(
   req: { params: { id: string }; headers: Record<string, string | string[] | undefined> },
   reply: { status: (n: number) => { send: (b: unknown) => void } },
@@ -73,23 +75,38 @@ export async function userRoutes(app: FastifyInstance): Promise<void> {
     return reply.send(result.data);
   });
 
-  // PATCH /users/:id — Préférences onboarding (quartier, intérêts)
+  // PATCH /users/:id — Onboarding (quartier, intérêts) OU profil post sign-up Better Auth
   app.patch<{ Params: { id: string } }>('/users/:id', async (req, reply) => {
     if (!requireUserAccess(req, reply)) return;
 
-    const parsed = patchUserOnboardingSchema.safeParse(req.body);
-    if (!parsed.success) {
+    const onboardingParsed = patchUserOnboardingSchema.safeParse(req.body);
+    if (onboardingParsed.success) {
+      const result = await UserService.mergeProfileData(req.params.id, {
+        quartier: onboardingParsed.data.quartier,
+        interests: onboardingParsed.data.interests,
+        onboardingCompletedAt: new Date().toISOString(),
+      });
+      if (!result.ok) {
+        return reply.status(result.statusCode).send({
+          code: result.code,
+          message: result.message,
+        });
+      }
+      return reply.send({ ok: true, ...result.data });
+    }
+
+    const postSignupParsed = patchUserPostSignupSchema.safeParse(req.body);
+    if (!postSignupParsed.success) {
       return reply.status(400).send({
         code: 'VALIDATION_ERROR',
-        errors: parsed.error.flatten(),
+        errors: postSignupParsed.error.flatten(),
       });
     }
 
-    const result = await UserService.mergeProfileData(req.params.id, {
-      quartier: parsed.data.quartier,
-      interests: parsed.data.interests,
-      onboardingCompletedAt: new Date().toISOString(),
-    });
+    const result = await UserService.applyPostSignupProfile(
+      req.params.id,
+      postSignupParsed.data,
+    );
     if (!result.ok) {
       return reply.status(result.statusCode).send({
         code: result.code,
@@ -183,6 +200,60 @@ export async function userRoutes(app: FastifyInstance): Promise<void> {
       });
     },
   );
+
+  app.post<{ Params: { id: string } }>('/users/:id/resend-otp', async (req, reply) => {
+    const { id } = req.params as { id: string };
+
+    // Rate limit : max 3 resend par 15 min par userId
+    const { allowed, remaining } = await checkOTPRateLimit(
+      id,
+      'resend-email',
+      3,
+      900,
+    );
+    if (!allowed) {
+      return reply.status(429).send({
+        code: 'RATE_LIMITED',
+        message: 'Trop de demandes. Attends 15 minutes.',
+      });
+    }
+
+    // Générer nouveau code via auth-service
+    const genRes = await fetch(
+      `${env.AUTH_SERVICE_URL}/internal/generate-otp`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-internal-service': 'user-service',
+        },
+        body: JSON.stringify({ userId: id, type: 'email' }),
+        signal: AbortSignal.timeout(3000),
+      },
+    );
+
+    if (!genRes.ok) {
+      return reply.status(500).send({ message: 'Erreur génération OTP' });
+    }
+
+    const { code } = (await genRes.json()) as { code: string };
+
+    // Envoyer email via queue (même mécanique que le signup)
+    await emailQueue.add('send-verification-email', {
+      userId: id,
+      email: (req.body as { email?: string }).email ?? '',
+      profileType: 'yunicitizen',
+      autoVerifyOnOtp: true,
+      otpCode: code,
+      isResend: true,
+    });
+
+    return reply.send({
+      success: true,
+      message: 'Code renvoyé par email',
+      remaining,
+    });
+  });
 
   // POST /users/:id/follow — Suivre un acteur
   app.post<{ Params: { id: string } }>('/users/:id/follow', async (req, reply) => {

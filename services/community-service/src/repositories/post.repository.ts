@@ -7,6 +7,7 @@ export class PostRepository {
     content: string;
     type: string;
     tribeId?: string | undefined;
+    mediaKeys?: string[] | undefined;
   }) {
     return prisma.post.create({
       data: {
@@ -15,10 +16,25 @@ export class PostRepository {
         content: data.content,
         type: data.type as 'text' | 'event' | 'offer' | 'question' | 'announcement',
         tribeId: data.tribeId ?? null,
+        mediaKeys: data.mediaKeys ?? [],
         isModerated: false,
         isFlagged: false,
         isPinned: false,
       },
+    });
+  }
+
+  static async updateMediaKeys(postId: string, mediaKeys: string[]) {
+    return prisma.post.update({
+      where: { id: postId },
+      data: { mediaKeys },
+    });
+  }
+
+  static async softDelete(postId: string) {
+    return prisma.post.update({
+      where: { id: postId },
+      data: { isActive: false, deletedAt: new Date() },
     });
   }
 

@@ -14,6 +14,12 @@ export type CreateUserPayload = {
   consent: { rgpd: boolean; marketing: boolean; analytics: boolean };
 };
 
+export type PostSignupProfilePayload = {
+  profileType: ProfileType;
+  profileData?: Record<string, unknown> | undefined;
+  consent: { rgpd: boolean; marketing: boolean; analytics: boolean };
+};
+
 export type ServiceResult<T> =
   | { ok: true; data: T }
   | { ok: false; code: string; message: string; statusCode: number };
@@ -114,6 +120,37 @@ export class UserService {
       ok: true as const,
       data: user,
     };
+  }
+
+  static async applyPostSignupProfile(
+    userId: string,
+    patch: PostSignupProfilePayload,
+  ): Promise<ServiceResult<{ id: string }>> {
+    const user = await UserRepository.findById(userId);
+    if (!user) {
+      return {
+        ok: false,
+        code: 'NOT_FOUND',
+        message: 'Utilisateur introuvable',
+        statusCode: 404,
+      };
+    }
+    await UserRepository.applyPostSignupProfile(userId, {
+      profileType: patch.profileType,
+      profileData: patch.profileData,
+      consent: patch.consent,
+    });
+
+    void GamificationService.addPoints(userId, 'INSCRIPTION').catch(() => {});
+
+    await emailQueue.add('send-verification-email', {
+      userId,
+      email: user.email,
+      profileType: patch.profileType,
+      autoVerifyOnOtp: patch.profileType === 'yunicitizen',
+    });
+
+    return { ok: true, data: { id: userId } };
   }
 
   static async mergeProfileData(

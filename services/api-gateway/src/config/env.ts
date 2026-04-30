@@ -33,11 +33,12 @@ const envSchema = z.object({
   // Infrastructure
   REDIS_URL: z.string().default('redis://:changeme_local@redis:6379'),
 
-  // CORS — origines autorisées (séparées par virgule)
-  // Inclut le front web Next en dev (3010) + autres clients
+  // CORS — origines autorisées (séparées par virgule). Ajouter http(s)://<IP>:3000 et Expo en LAN dans .env.local.
   CORS_ORIGINS: z
     .string()
-    .default('http://localhost:3000,http://localhost:3010,http://localhost:8081'),
+    .default(
+      'http://localhost:3000,http://localhost:3010,http://localhost:8081,exp://localhost:8081',
+    ),
 });
 
 // Fail fast au démarrage si une variable est manquante ou invalide

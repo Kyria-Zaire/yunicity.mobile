@@ -10,6 +10,7 @@ export class PostService {
     content: string;
     type: string;
     tribeId?: string | undefined;
+    mediaKeys?: string[] | undefined;
   }) {
     if (payload.content.trim().length < 3) {
       return {

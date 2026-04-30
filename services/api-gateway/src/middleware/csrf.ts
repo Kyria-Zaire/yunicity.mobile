@@ -3,6 +3,16 @@ import { env } from '../config/env.js';
 
 const MUTATION_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
+function isBetterAuthProxyPath(url: string): boolean {
+  const path = (url.split('?')[0] ?? url).toLowerCase();
+  return (
+    path.startsWith('/auth/') ||
+    path === '/auth' ||
+    path.startsWith('/api/auth/') ||
+    path === '/api/auth'
+  );
+}
+
 /**
  * Protection CSRF par vérification de l'Origin header.
  * Les requêtes mutation avec cookies doivent provenir d'une origine autorisée.
@@ -15,6 +25,10 @@ export function registerCsrfProtection(app: FastifyInstance): void {
 
   app.addHook('onRequest', async (req, reply) => {
     if (!MUTATION_METHODS.has(req.method)) return;
+
+    // Better Auth (proxy /auth/*, /api/auth/*) : validation d'origine côté auth-service.
+    // Expo / RN envoie souvent une Origin non listée ici → faux positif CSRF_REJECTED.
+    if (isBetterAuthProxyPath(req.url)) return;
 
     // Pas de cookie = pas de CSRF (requête sans session, ex: API key)
     if (!req.headers.cookie?.includes('yunicity')) return;
