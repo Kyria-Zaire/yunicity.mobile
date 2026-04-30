@@ -13,7 +13,6 @@
     },
     "preview": {
       "distribution": "internal",
-      "installCommand": "pnpm install --no-frozen-lockfile",
       "android": {
         "buildType": "apk"
       },
