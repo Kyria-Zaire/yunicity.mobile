@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Yunicity",
+    "slug": "yunicity-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kyriadev.mobile",
+      "bundleIdentifier": "com.kyriadev.yunicity",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -35,7 +35,7 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "com.kyriadev.mobile"
+      "package": "com.kyriadev.yunicity"
     },
     "web": {
       "bundler": "metro",
@@ -59,7 +59,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "7c183923-bc37-4865-a684-ac80e2b14d1d"
+        "projectId": "049d97c8-fb8f-480c-b14a-a6620f52941c"
       }
     }
   }
