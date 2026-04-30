@@ -9,7 +9,7 @@ import { Colors, Fonts, Shadows, TabBarGlass, tabBarFloatingLayout } from '@/con
 type Ion = keyof typeof Ionicons.glyphMap;
 
 const ROUTE_ICONS: Record<string, { inactive: Ion; active: Ion }> = {
-  index: { inactive: 'home-outline', active: 'home' },
+  feed: { inactive: 'home-outline', active: 'home' },
   map: { inactive: 'map-outline', active: 'map' },
   pass: { inactive: 'ticket-outline', active: 'ticket' },
   tribus: { inactive: 'people-outline', active: 'people' },
@@ -75,7 +75,20 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
                         target: route.key,
                         canPreventDefault: true,
                       });
-                      if (!focused && !event.defaultPrevented) {
+                      if (event.defaultPrevented) return;
+
+                      if (route.name === 'feed') {
+                        navigation.dispatch({
+                          ...CommonActions.navigate({
+                            name: 'feed',
+                            params: { screen: 'index' },
+                          }),
+                          target: state.key,
+                        });
+                        return;
+                      }
+
+                      if (!focused) {
                         navigation.dispatch({
                           ...CommonActions.navigate({ name: route.name, params: route.params }),
                           target: state.key,

@@ -20,6 +20,8 @@ export const Colors = {
   textBody: '#374151',
   textMuted: '#9CA3AF',
   mapCardInner: '#1C1F4A',
+  /** Accent carte / marqueurs (alias maquette — évite ReferenceError si référencé) */
+  mapBlue: '#2A2FFF',
   pageBg: '#F9FAFB',
   fomoPillBg: '#FEF3C7',
   fomoPillText: '#D97706',

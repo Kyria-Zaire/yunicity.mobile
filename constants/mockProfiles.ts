@@ -74,11 +74,11 @@ export const MOCK_PROFILES: MockProfile[] = [
   {
     id: 'u1',
     type: 'yunicitizen',
-    name: 'Léa Martin',
+    name: 'Kyria',
     quartier: 'Croix-Rouge',
     points: 340,
     level: 3,
-    bio: 'Passionnée de vélo urbain',
+    bio: 'Exploratrice urbaine à Reims',
     badges: ['pionnier', 'connecteur'],
     verified: true,
   },
@@ -254,4 +254,16 @@ export function profileDisplayName(p: MockProfile): string {
 
 export function rankingProfiles(): MockProfile[] {
   return [...MOCK_PROFILES].sort((a, b) => b.points - a.points);
+}
+
+/** Libellé court du type de profil (classement Pass, etc.). */
+export function profileTypeBadgeLabel(type: ProfileKind): string {
+  const labels: Record<ProfileKind, string> = {
+    yunicitizen: 'Citoyen',
+    commercial: 'Pro',
+    association: 'Asso',
+    freelance: 'Freelance',
+    ecole: 'École',
+  };
+  return labels[type];
 }

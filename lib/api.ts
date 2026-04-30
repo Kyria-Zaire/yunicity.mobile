@@ -16,15 +16,29 @@ function withTimeout(signal: AbortSignal | undefined | null, ms: number) {
   return { signal: controller.signal, cleanup: () => clearTimeout(timeoutId) };
 }
 
+/** ID utilisateur issu du cache `yunicity_user` — requis par la gateway (mode dev) pour propager `X-User-ID` vers `/users/*`. */
+async function getStoredUserId(): Promise<string | undefined> {
+  try {
+    const userJson = await AsyncStorage.getItem('yunicity_user');
+    if (!userJson) return undefined;
+    const u = JSON.parse(userJson) as { id?: string };
+    return typeof u.id === 'string' && u.id.length > 0 ? u.id : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
-): Promise<{ data: T | null; error: string | null }> {
+): Promise<{ data: T | null; error: string | null; status?: number; code?: string }> {
   try {
     const token = await AsyncStorage.getItem('yunicity_session');
+    const userId = await getStoredUserId();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(userId ? { 'X-User-ID': userId } : {}),
       ...((options.headers as Record<string, string>) ?? {}),
     };
 
@@ -39,52 +53,167 @@ async function apiFetch<T>(
       const err = (await res
         .json()
         .catch(() => ({ message: 'Erreur reseau' }))) as {
+        code?: string;
         message?: string;
       };
-      return { data: null, error: err.message ?? `Erreur ${res.status}` };
+      return {
+        data: null,
+        error: err.message ?? `Erreur ${res.status}`,
+        status: res.status,
+        code: err.code,
+      };
     }
 
     const data = (await res.json()) as T;
-    return { data, error: null };
+    return { data, error: null, status: res.status };
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Erreur inconnue';
-    return { data: null, error: msg };
+    return { data: null, error: msg, status: 0, code: 'NETWORK' };
   }
 }
 
 // ── Auth ────────────────────────────────────────────────
 
+/**
+ * Corps renvoyé par POST `/auth/sign-in/email` (Better Auth exposé par la gateway).
+ * - `token` : JWT à envoyer en `Authorization: Bearer` (stocké `yunicity_session`).
+ * - `user` : session Better Auth, en pratique souvent `{ id, email, name?, image?, … }`.
+ *   Le champ `profileType` n’est **pas** garanti dans cette réponse ; il est porté par le
+ *   profil métier User Service — le récupérer via {@link getMyProfile} après connexion.
+ */
+export type LoginApiResponse = {
+  token: string;
+  user: {
+    id: string;
+    email?: string;
+    name?: string | null;
+    image?: string | null;
+    emailVerified?: boolean;
+    /** Présent seulement si la gateway / plugin l’injecte ; sinon absent. */
+    profileType?: string;
+  };
+};
+
 export async function loginApi(email: string, password: string) {
-  return apiFetch<{
-    token: string;
-    user: { id: string; email: string; profileType: string };
-  }>('/auth/sign-in/email', {
+  return apiFetch<LoginApiResponse>('/auth/sign-in/email', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
 }
+
+type SignUpEmailResponse = {
+  token?: string | null;
+  user?: { id?: string; email?: string; name?: string };
+};
+
+function pickSignUpUser(body: SignUpEmailResponse | null): {
+  id: string;
+  email?: string;
+} | null {
+  if (!body?.user?.id) return null;
+  return { id: body.user.id, email: body.user.email };
+}
+
+export type RegisterApiResult = {
+  data: { id: string; email: string } | null;
+  error: string | null;
+  status?: number;
+  code?: string;
+};
 
 export async function registerApi(params: {
   email: string;
   password: string;
   name: string;
   profileType: string;
-}) {
-  return apiFetch<{ id: string; email: string }>('/users', {
+}): Promise<RegisterApiResult> {
+  const authRes = await apiFetch<SignUpEmailResponse>('/auth/sign-up/email', {
     method: 'POST',
     body: JSON.stringify({
       email: params.email,
       password: params.password,
+      name: params.name,
+    }),
+  });
+
+  if (authRes.error || !authRes.data) {
+    return {
+      data: null,
+      error: authRes.error,
+      status: authRes.status,
+      code: authRes.code,
+    };
+  }
+
+  const signedUp = pickSignUpUser(authRes.data);
+  if (!signedUp) {
+    return {
+      data: null,
+      error: 'Réponse inscription invalide',
+      status: authRes.status ?? 500,
+      code: 'SIGNUP_INVALID',
+    };
+  }
+
+  const userId = signedUp.id;
+
+  const profileRes = await apiFetch<{ id?: string }>(`/users/${userId}`, {
+    method: 'PATCH',
+    headers: {
+      'X-User-ID': userId,
+    },
+    body: JSON.stringify({
       profileType: params.profileType,
       profileData: { displayName: params.name },
       consent: { rgpd: true, marketing: false, analytics: false },
     }),
   });
+
+  if (profileRes.error) {
+    return {
+      data: null,
+      error: profileRes.error,
+      status: profileRes.status,
+      code: profileRes.code,
+    };
+  }
+
+  return {
+    data: { id: userId, email: params.email },
+    error: null,
+    status: 201,
+  };
 }
 
 export async function logoutApi() {
   await AsyncStorage.removeItem('yunicity_session');
   await AsyncStorage.removeItem('yunicity_user');
+}
+
+export async function verifyOtpApi(userId: string, code: string) {
+  return apiFetch<{ success: boolean }>(`/users/${userId}/verify-email`, {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+}
+
+export async function resendOtpApi(userId: string, email: string) {
+  return apiFetch<{ success: boolean; message: string; remaining: number }>(
+    `/users/${userId}/resend-otp`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    },
+  );
+}
+
+export async function patchUserOnboardingApi(userId: string, payload: { quartier: string; interests: string[] }) {
+  // Onboarding juste après signup: pas encore de session → on passe X-User-ID (dev) pour autoriser PATCH /users/:id
+  return apiFetch<{ ok: boolean }>(`/users/${userId}`, {
+    method: 'PATCH',
+    headers: { 'X-User-ID': userId },
+    body: JSON.stringify(payload),
+  });
 }
 
 // ── Profil / Passeport ──────────────────────────────────

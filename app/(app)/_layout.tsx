@@ -1,44 +1,22 @@
-import { Tabs } from 'expo-router';
-import { FloatingTabBar } from '@/components/FloatingTabBar';
+import { Stack } from 'expo-router';
+import { Colors } from '@/constants/theme';
 
 export default function AppLayout() {
   return (
-    <Tabs
-      tabBar={(props) => <FloatingTabBar {...props} />}
+    <Stack
       screenOptions={{
         headerShown: false,
+        contentStyle: { backgroundColor: Colors.pageBg },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Feed',
-        }}
-      />
-      <Tabs.Screen
-        name="map"
-        options={{
-          title: 'Carte',
-        }}
-      />
-      <Tabs.Screen
-        name="pass"
-        options={{
-          title: 'Pass',
-        }}
-      />
-      <Tabs.Screen
-        name="tribus"
-        options={{
-          title: 'Tribus',
-        }}
-      />
-      <Tabs.Screen
-        name="profil"
-        options={{
-          title: 'Profil',
-        }}
-      />
-    </Tabs>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="feed/[id]" />
+      <Stack.Screen name="profile/[id]" />
+      <Stack.Screen name="profile/followers" />
+      <Stack.Screen name="tribes/[id]" />
+      <Stack.Screen name="settings" />
+      <Stack.Screen name="map/actor/[id]" />
+      <Stack.Screen name="notifications" />
+    </Stack>
   );
 }

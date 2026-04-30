@@ -1,24 +1,21 @@
-import { useCallback, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  Animated,
-  Share,
-  TextInput,
-  Alert,
-  Platform,
-  ActionSheetIOS,
-} from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, Animated, Platform, Image } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import type { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { Colors, Fonts, Radii } from '@/constants/theme';
 import type { FeedPost, FeedPostType } from '@/constants/mockPosts';
 import { PROFILE_COLORS, type ProfileKind } from '@/constants/mockProfiles';
+import { PostActionsRow } from '@/components/feed/PostActionsRow';
+import { ShareToUserSheet } from '@/components/feed/ShareToUserSheet';
+import { BoosterSheet } from '@/components/feed/BoosterSheet';
+import { BoosterToast } from '@/components/feed/BoosterToast';
+
+const PLACEHOLDER = require('../../assets/images/placeholder.png');
 
 function initials(name: string) {
   const p = name.trim().split(/\s+/).filter(Boolean);
-  if (p.length >= 2) return (p[0][0] + p[1][0]).toUpperCase();
+  if (p.length >= 2) return (p[0]![0] + p[1]![0]).toUpperCase();
   return name.slice(0, 2).toUpperCase() || '?';
 }
 
@@ -35,16 +32,53 @@ function typeBadge(type: FeedPostType): { label: string; bg: string; fg: string 
   }
 }
 
-export function PostCard({ post }: { post: FeedPost }) {
+function formatAgo(raw: string) {
+  return raw.replace(/(\d+)\s*min\b/i, '$1 min');
+}
+
+export interface PostCardProps {
+  post: FeedPost;
+  disableAuthorNav?: boolean;
+  onPressContent?: () => void;
+  onPressAuthor?: () => void;
+  onOpenComments?: () => void;
+  commentCount?: number;
+}
+
+export function PostCard({
+  post,
+  disableAuthorNav,
+  onPressContent,
+  onPressAuthor,
+  onOpenComments,
+  commentCount,
+}: PostCardProps) {
+  const shareSheetRef = useRef<BottomSheetModal>(null);
+  const boosterSheetRef = useRef<BottomSheetModal>(null);
+
   const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likes);
+  const [boosted, setBoosted] = useState(false);
+  const [showBoostToast, setShowBoostToast] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [showReply, setShowReply] = useState(false);
-  const [replyDraft, setReplyDraft] = useState('');
+  const [imageFailed, setImageFailed] = useState(false);
+
   const heartScale = useRef(new Animated.Value(1)).current;
+
   const color = PROFILE_COLORS[post.authorType as ProfileKind] ?? Colors.primary;
   const badge = typeBadge(post.type);
   const longText = post.content.length > 120;
+  const commentsShown = commentCount ?? post.comments;
+
+  const likeDisplayCount = post.likes + (liked ? 1 : 0);
+
+  useEffect(() => {
+    setLiked(false);
+  }, [post.id, post.likes]);
+
+  useEffect(() => {
+    setBoosted(false);
+    setShowBoostToast(false);
+  }, [post.id]);
 
   const pulseLike = useCallback(() => {
     Animated.sequence([
@@ -56,29 +90,63 @@ export function PostCard({ post }: { post: FeedPost }) {
   const toggleLike = useCallback(() => {
     setLiked((v) => {
       const next = !v;
-      setLikeCount((c) => (next ? c + 1 : Math.max(0, c - 1)));
       if (next) pulseLike();
       return next;
     });
   }, [pulseLike]);
 
-  const onShare = useCallback(async () => {
-    try {
-      await Share.share({
-        message: `${post.authorName} sur Yunicity :\n\n${post.content}`,
-      });
-    } catch {
-      /* ignore */
-    }
-  }, [post.authorName, post.content]);
+  const openShareSheet = useCallback(() => {
+    shareSheetRef.current?.present();
+  }, []);
+
+  const openBooster = useCallback(() => {
+    boosterSheetRef.current?.present();
+  }, []);
+
+  const goDetail = useCallback(() => {
+    if (onPressContent) onPressContent();
+    else router.push({ pathname: '/(app)/feed/[id]', params: { id: post.id } });
+  }, [onPressContent, post.id]);
+
+  const goAuthor = useCallback(() => {
+    if (disableAuthorNav) return;
+    if (onPressAuthor) onPressAuthor();
+    else router.push({ pathname: '/(app)/profile/[id]', params: { id: post.authorId } });
+  }, [disableAuthorNav, onPressAuthor, post.authorId]);
+
+  const openComments = useCallback(() => {
+    onOpenComments?.();
+  }, [onOpenComments]);
+
+  const showVideoThumb = !!post.hasVideo && !!post.thumbnailUrl;
+  const showImageBlock = post.imageUrl && !imageFailed && !post.hasVideo;
+  const showEmojiFallback = post.hasImage && (!post.imageUrl || imageFailed) && !post.hasVideo;
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={[styles.avatar, { backgroundColor: color }]}>
-          <Text style={styles.avatarTxt}>{initials(post.authorName)}</Text>
+      <ShareToUserSheet modalRef={shareSheetRef} />
+      <BoosterSheet
+        modalRef={boosterSheetRef}
+        onBoost={() => {
+          setBoosted(true);
+          setShowBoostToast(true);
+        }}
+      />
+      <BoosterToast visible={showBoostToast} onHidden={() => setShowBoostToast(false)} />
+
+      {boosted ? (
+        <View style={styles.boostBadge}>
+          <Text style={styles.boostBadgeTxt}>🚀 Boosté</Text>
         </View>
-        <View style={styles.headerCol}>
+      ) : null}
+
+      <View style={styles.header}>
+        <Pressable onPress={goAuthor} disabled={!!disableAuthorNav} style={styles.avatarPress}>
+          <View style={[styles.avatar, { backgroundColor: color }]}>
+            <Text style={styles.avatarTxt}>{initials(post.authorName)}</Text>
+          </View>
+        </Pressable>
+        <Pressable onPress={goAuthor} disabled={!!disableAuthorNav} style={styles.headerCol}>
           <View style={styles.nameRow}>
             <Text style={styles.name} numberOfLines={1}>
               {post.authorName}
@@ -89,81 +157,66 @@ export function PostCard({ post }: { post: FeedPost }) {
               </View>
             ) : null}
             <Text style={styles.dotSep}>·</Text>
-            <Text style={styles.time}>il y a {post.timestamp}</Text>
+            <Text style={styles.time}>il y a {formatAgo(post.timestamp)}</Text>
           </View>
-        </View>
-        <Pressable
-          hitSlop={12}
-          onPress={() => {
-            if (Platform.OS === 'ios') {
-              ActionSheetIOS.showActionSheetWithOptions(
-                { options: ['Annuler', 'Signaler', 'Masquer'], cancelButtonIndex: 0 },
-                () => {},
-              );
-            } else {
-              Alert.alert('Menu', 'Actions à venir');
-            }
-          }}
-        >
+        </Pressable>
+        <Pressable hitSlop={12} onPress={openBooster}>
           <Ionicons name="ellipsis-horizontal" size={20} color={Colors.gray} />
         </Pressable>
       </View>
 
-      <Text style={styles.body} numberOfLines={expanded ? undefined : 3}>
-        {post.content}
-      </Text>
-      {longText && !expanded ? (
-        <Pressable onPress={() => setExpanded(true)} hitSlop={8}>
-          <Text style={styles.more}>Voir plus</Text>
-        </Pressable>
-      ) : null}
-
-      {post.hasImage ? (
-        <View style={[styles.media, { backgroundColor: post.imageColor }]}>
-          <Text style={styles.mediaEmoji}>{post.imageEmoji ?? '🖼️'}</Text>
-        </View>
-      ) : null}
-
-      <View style={styles.actions}>
-        <Pressable style={styles.actionBtn} onPress={() => setShowReply((v) => !v)}>
-          <Ionicons name="chatbubble-outline" size={20} color={Colors.gray} />
-          <Text style={styles.actionCount}>{post.comments}</Text>
-        </Pressable>
-        <Pressable style={styles.actionBtn}>
-          <Ionicons name="repeat-outline" size={20} color={Colors.gray} />
-          <Text style={styles.actionCount}>{post.shares}</Text>
-        </Pressable>
-        <Pressable style={styles.actionBtn} onPress={toggleLike}>
-          <Animated.View style={{ transform: [{ scale: heartScale }] }}>
-            <Ionicons name={liked ? 'heart' : 'heart-outline'} size={20} color={liked ? '#E11D48' : Colors.gray} />
-          </Animated.View>
-          <Text style={[styles.actionCount, liked && { color: '#E11D48' }]}>{likeCount}</Text>
-        </Pressable>
-        <Pressable style={styles.actionBtn} onPress={onShare}>
-          <Ionicons name="share-outline" size={20} color={Colors.gray} />
-        </Pressable>
-      </View>
-
-      {showReply ? (
-        <View style={styles.replyBox}>
-          <TextInput
-            value={replyDraft}
-            onChangeText={setReplyDraft}
-            placeholder="Répondre…"
-            placeholderTextColor={Colors.gray}
-            style={styles.replyInput}
-          />
-          <Pressable
-            style={styles.replySend}
-            onPress={() => {
-              setReplyDraft('');
-              setShowReply(false);
-            }}
-          >
-            <Text style={styles.replySendTxt}>Envoyer</Text>
+      <Pressable onPress={goDetail} style={styles.contentPress}>
+        <Text style={styles.body} numberOfLines={expanded ? undefined : 3}>
+          {post.content}
+        </Text>
+        {longText && !expanded ? (
+          <Pressable onPress={() => setExpanded(true)} hitSlop={8}>
+            <Text style={styles.more}>Voir plus</Text>
           </Pressable>
-        </View>
-      ) : null}
+        ) : null}
+
+        {showVideoThumb ? (
+          <View style={styles.videoWrap}>
+            <Image
+              source={{ uri: post.thumbnailUrl! }}
+              style={styles.mediaImg}
+              resizeMode="cover"
+              {...(Platform.OS === 'ios' ? { defaultSource: PLACEHOLDER } : {})}
+              onError={() => setImageFailed(true)}
+            />
+            <View style={styles.playOverlay}>
+              <View style={styles.playBtn}>
+                <Ionicons name="play" size={22} color={Colors.white} />
+              </View>
+            </View>
+          </View>
+        ) : null}
+        {showImageBlock ? (
+          <Image
+            source={{ uri: post.imageUrl }}
+            style={styles.mediaImg}
+            resizeMode="cover"
+            {...(Platform.OS === 'ios' ? { defaultSource: PLACEHOLDER } : {})}
+            onError={() => setImageFailed(true)}
+          />
+        ) : null}
+        {showEmojiFallback ? (
+          <View style={[styles.media, { backgroundColor: post.imageColor }]}>
+            <Text style={styles.mediaEmoji}>{post.imageEmoji ?? '🖼️'}</Text>
+          </View>
+        ) : null}
+      </Pressable>
+
+      <PostActionsRow
+        commentCount={commentsShown}
+        shareCount={post.shares}
+        likeCount={likeDisplayCount}
+        liked={liked}
+        heartScale={heartScale}
+        onPressComments={openComments}
+        onPressLike={toggleLike}
+        onPressShare={openShareSheet}
+      />
     </View>
   );
 }
@@ -177,7 +230,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.grayLight,
   },
+  boostBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  boostBadgeTxt: { fontFamily: Fonts.body.family, fontSize: 12, color: Colors.primary },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  avatarPress: {},
   avatar: {
     width: 44,
     height: 44,
@@ -193,6 +256,7 @@ const styles = StyleSheet.create({
   typePillTxt: { fontFamily: Fonts.bodySemi.family, fontSize: 10 },
   dotSep: { fontFamily: Fonts.body.family, fontSize: 13, color: Colors.gray },
   time: { fontFamily: Fonts.body.family, fontSize: 13, color: Colors.gray },
+  contentPress: {},
   body: {
     marginTop: 8,
     fontFamily: Fonts.body.family,
@@ -205,36 +269,33 @@ const styles = StyleSheet.create({
     marginTop: 12,
     width: '100%',
     aspectRatio: 16 / 9,
-    borderRadius: Radii.min,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mediaImg: {
+    marginTop: 12,
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: 16,
+  },
+  videoWrap: { marginTop: 12 },
+  playOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(0,0,0,0.45)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   mediaEmoji: { fontSize: 48 },
-  actions: {
-    marginTop: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingRight: 8,
-  },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, minWidth: 56 },
-  actionCount: { fontFamily: Fonts.body.family, fontSize: 13, color: Colors.gray },
-  replyBox: {
-    marginTop: 12,
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'center',
-  },
-  replyInput: {
-    flex: 1,
-    borderRadius: Radii.inner,
-    backgroundColor: Colors.grayLight,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontFamily: Fonts.body.family,
-    fontSize: 14,
-    color: Colors.dark,
-  },
-  replySend: { paddingHorizontal: 12, paddingVertical: 8 },
-  replySendTxt: { fontFamily: Fonts.bodySemi.family, fontSize: 14, color: Colors.primary },
 });
