@@ -17,7 +17,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Sécurité
   await app.register(helmet, { contentSecurityPolicy: false });
   await app.register(cors, {
-    origin: env.CORS_ORIGINS.split(',').map((o) => o.trim()),
+    origin: env.CORS_ORIGINS.split(',').map((o: string) => o.trim()),
     credentials: true,
   });
   await app.register(rateLimit, {

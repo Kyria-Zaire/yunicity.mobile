@@ -26,6 +26,7 @@
     "pino": "catalog:",
     "ioredis": "catalog:",
     "dotenv": "catalog:",
+    "zod": "^3.23.0",
     "@yunicity/types": "workspace:*",
     "@yunicity/validators": "workspace:*",
     "@yunicity/config": "workspace:*"

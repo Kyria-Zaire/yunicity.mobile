@@ -5,7 +5,7 @@ const DEFAULT = ['user-service'];
 function list(): string[] {
   const raw = env.INTERNAL_SERVICE_NAMES?.trim();
   if (!raw) return DEFAULT;
-  return raw.split(',').map((s) => s.trim()).filter(Boolean);
+  return raw.split(',').map((s: string) => s.trim()).filter(Boolean);
 }
 
 export function isTrustedInternalService(
