@@ -6,7 +6,7 @@
     "dockerfileContext": "."
   },
   "deploy": {
-    "startCommand": "npx prisma migrate deploy --schema=../../packages/database/prisma/schema.prisma && node dist/index.js",
+    "startCommand": "sh ../../services/user-service/start.sh",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 60,
     "restartPolicyType": "ON_FAILURE",
