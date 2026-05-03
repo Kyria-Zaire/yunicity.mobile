@@ -6,21 +6,31 @@ import type { FastifyInstance } from 'fastify';
 
 const { buildApp } = await import('../app.js');
 
+function mockFetchResponse(body: unknown, init?: { ok?: boolean; status?: number }): Response {
+  const ok = init?.ok ?? true;
+  const status = init?.status ?? (ok ? 200 : 500);
+  return {
+    ok,
+    status,
+    headers: new Headers(),
+    json: async () => body,
+  } as Response;
+}
+
 describe('API Gateway proxy auth propagation', () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
-    global.fetch = vi
-      .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue({ user: { id: 'u1' } }),
-      } as never)
-      .mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        json: vi.fn().mockResolvedValue({ ok: true }),
-      } as never);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+        if (url.includes('/auth/session/verify')) {
+          return mockFetchResponse({ user: { id: 'u1' } });
+        }
+        return mockFetchResponse({ ok: true }, { status: 200 });
+      }),
+    );
 
     app = await buildApp();
     await app.ready();
@@ -28,6 +38,7 @@ describe('API Gateway proxy auth propagation', () => {
 
   afterAll(async () => {
     await app.close();
+    vi.unstubAllGlobals();
   });
 
   it('propage x-user-id vers /community a partir de la session', async () => {
@@ -44,7 +55,11 @@ describe('API Gateway proxy auth propagation', () => {
     });
 
     expect(res.statusCode).toBe(200);
-    expect(vi.mocked(global.fetch).mock.calls[1]?.[1]).toEqual(
+    const proxyCall = vi.mocked(fetch).mock.calls.find(([u]) => {
+      const url = typeof u === 'string' ? u : u instanceof URL ? u.href : u.url;
+      return url.includes('/community');
+    });
+    expect(proxyCall?.[1]).toEqual(
       expect.objectContaining({
         headers: expect.objectContaining({
           'X-User-ID': 'u1',
