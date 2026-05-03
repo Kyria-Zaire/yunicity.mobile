@@ -33,7 +33,7 @@ RUN pnpm --filter "@yunicity/types" --filter "@yunicity/validators" --filter "@y
 RUN pnpm --filter "@yunicity/payment-service" run build
 
 RUN echo '#!/bin/sh' > /tmp/hc.sh && \
-    echo "wget -qO- http://127.0.0.1:3005/health || exit 1" >> /tmp/hc.sh && \
+    echo 'wget -qO- http://127.0.0.1:$${PORT:-3005}/health || exit 1' >> /tmp/hc.sh && \
     chmod +x /tmp/hc.sh && mv /tmp/hc.sh /usr/local/bin/service-healthcheck.sh
 
 WORKDIR /app/services/payment-service
