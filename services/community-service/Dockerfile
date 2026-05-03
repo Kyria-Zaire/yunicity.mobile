@@ -37,6 +37,9 @@ RUN echo '#!/bin/sh' > /tmp/hc.sh && \
     chmod +x /tmp/hc.sh && mv /tmp/hc.sh /usr/local/bin/service-healthcheck.sh
 
 WORKDIR /app/services/community-service
+COPY services/community-service/start.sh ./start.sh
+RUN chmod +x ./start.sh
+
 USER yunicity
 EXPOSE 3003
 
