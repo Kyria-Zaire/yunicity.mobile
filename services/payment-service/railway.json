@@ -2,14 +2,8 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "DOCKERFILE",
-    "dockerfilePath": "../../docker/node-service.Dockerfile",
-    "dockerfileContext": "../..",
-    "buildArgs": {
-      "SERVICE_DIR": "payment-service",
-      "EXPOSE_PORT": "3005",
-      "PNPM_FILTER": "@yunicity/payment-service",
-      "RUNNER_HEALTH": "1"
-    }
+    "dockerfilePath": "services/payment-service/Dockerfile",
+    "dockerfileContext": "."
   },
   "deploy": {
     "startCommand": "node dist/index.js",
