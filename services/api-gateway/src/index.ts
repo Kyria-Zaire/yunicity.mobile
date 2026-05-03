@@ -5,8 +5,9 @@ async function start(): Promise<void> {
   const app = await buildApp();
 
   try {
-    await app.listen({ port: env.PORT, host: '0.0.0.0' });
-    app.log.info({ port: env.PORT, env: env.NODE_ENV }, 'API Gateway started');
+    const port = parseInt(process.env.PORT ?? '3000', 10);
+    await app.listen({ port, host: '0.0.0.0' });
+    app.log.info({ port, env: env.NODE_ENV }, 'API Gateway started');
   } catch (err) {
     app.log.error(err, 'Failed to start');
     process.exit(1);
