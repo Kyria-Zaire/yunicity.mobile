@@ -5,7 +5,7 @@ echo "Waiting for database..."
 
 RETRIES=10
 while [ "$RETRIES" -gt 0 ]; do
-  if pnpm exec prisma migrate deploy --schema=../../packages/database/prisma/schema.prisma 2>/dev/null; then
+  if pnpm --filter @yunicity/database exec prisma migrate deploy --schema=../../packages/database/prisma/schema.prisma 2>/dev/null; then
     break
   fi
 
