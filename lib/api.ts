@@ -157,6 +157,13 @@ export async function registerApi(params: {
 
   const userId = signedUp.id;
 
+  // En prod, la gateway DROP le X-User-ID envoyé par le client (proxy.ts:133-140) —
+  // seul un Authorization: Bearer <token> Better Auth est accepté. On persiste le token
+  // de la réponse sign-up AVANT le PATCH pour que apiFetch l'attache automatiquement.
+  if (authRes.data.token) {
+    await AsyncStorage.setItem('yunicity_session', authRes.data.token);
+  }
+
   const profileRes = await apiFetch<{ id?: string }>(`/users/${userId}`, {
     method: 'PATCH',
     headers: {
