@@ -140,6 +140,7 @@ model User {
   reactions         Reaction[]
   sessions          Session[]
   accounts          Account[]
+  twoFactors        TwoFactor[]
   pushSubscriptions PushSubscription[]
 
   @@index([email])
@@ -202,6 +203,31 @@ model Account {
 
   @@index([userId])
   @@unique([providerId, accountId])
+}
+
+// ── Verification Better Auth ─────────────────────────────
+// Tokens pour password reset, email verification, magic links
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+// ── Two-Factor Auth Better Auth ──────────────────────────
+// Plugin twoFactor — secret TOTP + backup codes par utilisateur
+model TwoFactor {
+  id          String @id @default(cuid())
+  userId      String
+  secret      String
+  backupCodes String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ── Tribes ──────────────────────────────────────────────
