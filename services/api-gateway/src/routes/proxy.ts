@@ -1,19 +1,34 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { env } from '../config/env.js';
 
-/** Résout l’utilisateur via la session Better Auth pour propager X-User-ID (A01). */
+/** Résout l’utilisateur via la session Better Auth pour propager X-User-ID (A01).
+ *  Accepte :
+ *   - cookie httpOnly Better Auth (web) — préfixe `yunicity`
+ *   - header `Authorization: Bearer <token>` (mobile RN — pas de cookie jar fiable)
+ */
 async function resolveUserIdFromSession(
   req: FastifyRequest,
 ): Promise<string | undefined> {
   const cookie = req.headers.cookie;
-  if (!cookie || !cookie.includes('yunicity')) return undefined;
+  const authHeader = req.headers.authorization;
+  const hasYunicityCookie =
+    typeof cookie === 'string' && cookie.includes('yunicity');
+  const hasBearer =
+    typeof authHeader === 'string' &&
+    authHeader.toLowerCase().startsWith('bearer ');
+
+  if (!hasYunicityCookie && !hasBearer) return undefined;
+
+  const fwHeaders: Record<string, string> = {};
+  if (hasYunicityCookie) fwHeaders['cookie'] = cookie!;
+  if (hasBearer) fwHeaders['authorization'] = authHeader!;
 
   try {
     const res = await fetch(
       `${env.AUTH_SERVICE_URL}/auth/session/verify`,
       {
         method: 'GET',
-        headers: { cookie },
+        headers: fwHeaders,
         signal: AbortSignal.timeout(3000),
       },
     );

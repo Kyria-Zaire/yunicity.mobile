@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
-import { twoFactor } from 'better-auth/plugins';
+import { twoFactor, bearer } from 'better-auth/plugins';
 import { prisma } from '@yunicity/database';
 import { env } from '../config/env.js';
 import { hashPassword, verifyPassword, validatePasswordStrength } from './password.js';
@@ -92,6 +92,9 @@ export const auth = betterAuth({
       issuer: 'Yunicity',
       backupCodesCount: 10,
     }),
+    // Bearer token support — mobile (RN) ne gère pas les cookies httpOnly proprement,
+    // donc l'Authorization: Bearer <token> doit être accepté par auth.api.getSession().
+    bearer(),
   ],
 
   // Origines autorisées (cookies / CSRF Better Auth)
