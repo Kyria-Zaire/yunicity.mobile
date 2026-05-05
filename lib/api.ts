@@ -119,6 +119,7 @@ export type RegisterApiResult = {
   error: string | null;
   status?: number;
   code?: string;
+  profileIncomplete?: boolean;
 };
 
 /**
@@ -197,19 +198,17 @@ export async function registerApi(params: {
     }),
   });
 
+  let profileIncomplete = false;
   if (profileRes.error) {
-    return {
-      data: null,
-      error: profileRes.error,
-      status: profileRes.status,
-      code: profileRes.code,
-    };
+    console.warn('[REGISTER] profile PATCH failed', profileRes.error, profileRes.code);
+    profileIncomplete = true;
   }
 
   return {
     data: { id: userId, email: params.email },
     error: null,
     status: 201,
+    profileIncomplete,
   };
 }
 

@@ -68,7 +68,7 @@ export default function RegisterScreen() {
       if (!ok) return;
 
       setBusy(true);
-      const { data, error, status, code } = await registerApi({
+      const { data, error, status, code, profileIncomplete } = await registerApi({
         email: em,
         password,
         name: fn,
@@ -77,6 +77,10 @@ export default function RegisterScreen() {
       if (error || !data?.id) {
         setFormError(getErrorMessage(status ?? 0, code));
         return;
+      }
+
+      if (profileIncomplete) {
+        console.warn('[REGISTER] profile PATCH incomplete — will retry during onboarding');
       }
 
       await AsyncStorage.setItem('yunicity_pending_user_id', data.id);
