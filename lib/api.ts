@@ -121,6 +121,27 @@ export type RegisterApiResult = {
   code?: string;
 };
 
+/**
+ * Retry helper — Railway met user-service en sleep après idle.
+ * Le 1er appel après réveil renvoie 503 SERVICE_UNAVAILABLE (le proxy gateway
+ * ne joint pas l'upstream). Backoff 800ms, 1600ms — total ~2.4s max d'attente.
+ */
+async function fetchWithRetry<T>(
+  path: string,
+  options: Parameters<typeof apiFetch>[1],
+  maxAttempts = 3,
+): Promise<Awaited<ReturnType<typeof apiFetch<T>>>> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const res = await apiFetch<T>(path, options);
+    if (res.status === 503 && attempt < maxAttempts) {
+      await new Promise((r) => setTimeout(r, 800 * attempt));
+      continue;
+    }
+    return res;
+  }
+  return apiFetch<T>(path, options);
+}
+
 export async function registerApi(params: {
   email: string;
   password: string;
@@ -164,7 +185,7 @@ export async function registerApi(params: {
     await AsyncStorage.setItem('yunicity_session', authRes.data.token);
   }
 
-  const profileRes = await apiFetch<{ id?: string }>(`/users/${userId}`, {
+  const profileRes = await fetchWithRetry<{ id?: string }>(`/users/${userId}`, {
     method: 'PATCH',
     headers: {
       'X-User-ID': userId,
